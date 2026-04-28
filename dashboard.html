@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SOON — Survey Dashboard</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+  :root {
+    --bg: #E6E4E0; --surface: #F0EEE9; --text: #1A1A1A; --text-muted: #6B6B6B;
+    --accent: #E10600; --border: #D0CEC9; --white: #FFFFFF; --green: #2D6A4F;
+  }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { background:var(--bg); color:var(--text); font-family:'Helvetica Neue',sans-serif; min-height:100vh; }
+
+  .header { padding:32px; border-bottom:1px solid var(--border); display:flex; justify-content:space-between; align-items:flex-end; }
+  .brand { font-size:10px; letter-spacing:0.35em; text-transform:uppercase; color:var(--text-muted); margin-bottom:6px; }
+  .title { font-family:'Georgia',serif; font-size:24px; font-weight:400; }
+  .subtitle { font-size:12px; color:var(--text-muted); margin-top:4px; }
+  .refresh-btn { padding:10px 20px; background:var(--text); color:var(--white); border:none; border-radius:2px; font-size:11px; letter-spacing:0.15em; text-transform:uppercase; cursor:pointer; }
+
+  .body { padding:32px; max-width:1200px; margin:0 auto; }
+
+  .kpi-row { display:grid; grid-template-columns:repeat(auto-fit,minmax(160px,1fr)); gap:12px; margin-bottom:32px; }
+  .kpi { background:var(--white); border:1px solid var(--border); border-radius:2px; padding:20px 24px; }
+  .kpi-label { font-size:10px; letter-spacing:0.3em; text-transform:uppercase; color:var(--text-muted); margin-bottom:8px; }
+  .kpi-value { font-family:'Georgia',serif; font-size:32px; font-weight:400; line-height:1; }
+  .kpi-sub { font-size:11px; color:var(--text-muted); margin-top:6px; }
+
+  .grid-2 { display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-bottom:16px; }
+  .grid-4 { display:grid; grid-template-columns:repeat(4,1fr); gap:16px; margin-bottom:16px; }
+  @media(max-width:900px){ .grid-2{grid-template-columns:1fr;} .grid-4{grid-template-columns:1fr 1fr;} }
+
+  .panel { background:var(--white); border:1px solid var(--border); border-radius:2px; padding:24px; }
+  .panel-label { font-size:10px; letter-spacing:0.3em; text-transform:uppercase; color:var(--text-muted); margin-bottom:16px; }
+
+  .bar-chart { display:flex; flex-direction:column; gap:10px; }
+  .bar-row { display:flex; align-items:center; gap:12px; }
+  .bar-label { font-size:12px; width:120px; flex-shrink:0; }
+  .bar-track { flex:1; background:var(--bg); border-radius:1px; height:8px; overflow:hidden; }
+  .bar-fill { height:100%; border-radius:1px; background:var(--text); transition:width 0.6s ease; }
+  .bar-fill.accent { background:var(--accent); }
+  .bar-fill.green { background:var(--green); }
+  .bar-count { font-size:12px; color:var(--text-muted); width:32px; text-align:right; flex-shrink:0; }
+
+  .price-card { background:var(--surface); border:1px solid var(--border); border-radius:2px; padding:20px; text-align:center; }
+  .price-letter { font-family:'Georgia',serif; font-size:20px; margin-bottom:8px; }
+  .price-avg { font-family:'Georgia',serif; font-size:32px; }
+  .price-unit { font-size:11px; color:var(--text-muted); margin-top:4px; }
+
+  .naming-row { display:flex; align-items:center; gap:12px; padding:14px 18px; border:1px solid var(--border); border-radius:2px; margin-bottom:8px; }
+  .naming-row.winner { border-color:var(--text); background:var(--text); color:var(--white); }
+  .naming-name { font-family:'Georgia',serif; font-size:15px; flex:1; }
+  .naming-principle { font-size:10px; letter-spacing:0.2em; text-transform:uppercase; color:var(--text-muted); }
+  .naming-row.winner .naming-principle { color:rgba(255,255,255,0.5); }
+  .naming-pct { font-family:'Georgia',serif; font-size:20px; }
+
+  .tag-cloud { display:flex; flex-wrap:wrap; gap:8px; }
+  .tag-item { padding:6px 12px; background:var(--surface); border:1px solid var(--border); border-radius:100px; font-size:12px; display:flex; align-items:center; gap:6px; }
+  .tag-item.top { background:var(--text); color:var(--white); border-color:var(--text); }
+  .tag-item .cnt { font-size:10px; opacity:0.6; }
+
+  .scent-tabs { display:flex; gap:4px; margin-bottom:20px; }
+  .scent-tab { padding:8px 16px; font-size:12px; border:1px solid var(--border); border-radius:2px; cursor:pointer; background:var(--surface); transition:all 0.2s; }
+  .scent-tab.active { background:var(--text); color:var(--white); border-color:var(--text); }
+
+  .section-heading { font-family:'Georgia',serif; font-size:18px; font-weight:400; margin:32px 0 16px; }
+  .divider { height:1px; background:var(--border); margin:32px 0; }
+  .loading { text-align:center; padding:80px; color:var(--text-muted); }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div>
+    <div class="brand">Soon — Fragrance Lab</div>
+    <h1 class="title">Survey Dashboard</h1>
+    <div class="subtitle" id="lastUpdated">Lädt …</div>
+  </div>
+  <button class="refresh-btn" onclick="loadData()">Aktualisieren</button>
+</div>
+
+<div class="body" id="dashBody">
+  <div class="loading">Daten werden geladen …</div>
+</div>
+
+<script>
+  const { createClient } = supabase;
+  const sb = createClient(
+    'https://xbyaffdahcndvwsvkyhf.supabase.co',
+    'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhieWFmZmRhaGNuZHZ3c3ZreWhmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzczNjc5NDQsImV4cCI6MjA5Mjk0Mzk0NH0.l43H1XIgM7R9P5dWSYeSWz8hxbpps8_7zML2yJ_obM4'
+  );
+
+  function pct(v, t) { return t ? Math.round((v/t)*100)+'%' : '0%'; }
+
+  function bar(label, val, total, cls) {
+    const w = total ? Math.round((val/total)*100) : 0;
+    return `<div class="bar-row"><span class="bar-label">${label}</span><div class="bar-track"><div class="bar-fill ${cls||''}" style="width:${w}%"></div></div><span class="bar-count">${val}</span></div>`;
+  }
+
+  async function loadData() {
+    document.getElementById('dashBody').innerHTML = '<div class="loading">Daten werden geladen …</div>';
+    const { data, error } = await sb.from('survey_responses').select('*');
+    if (error) { document.getElementById('dashBody').innerHTML = '<div class="loading">Fehler: ' + error.message + '</div>'; return; }
+
+    const rows = data || [];
+    const completed = rows.filter(r => r.completed);
+    const total = rows.length;
+
+    // Aggregieren
+    const gender = {m:0,w:0,d:0};
+    const age = {'16-20':0,'21-25':0,'26-32':0,'33+':0};
+    const naming = {mood:0,mood_ingredient:0,ingredient:0};
+    const prices = {a:[],b:[],c:[],d:[]};
+    const keep = {A:0,B:0,C:0,D:0};
+    const recommend = {A:0,B:0,C:0,D:0};
+    const adj = {a:{},b:{},c:{},d:{}};
+    const occ = {a:{},b:{},c:{},d:{}};
+
+    rows.forEach(r => {
+      if (r.gender) gender[r.gender] = (gender[r.gender]||0)+1;
+      if (r.age_range) age[r.age_range] = (age[r.age_range]||0)+1;
+      if (r.naming_winner) naming[r.naming_winner] = (naming[r.naming_winner]||0)+1;
+      ['a','b','c','d'].forEach(l => {
+        const p = parseFloat(r['price_'+l]);
+        if (!isNaN(p) && p > 0) prices[l].push(p);
+        if (r['keep'] === l.toUpperCase() || r['rank_keep'] === l.toUpperCase()) keep[l.toUpperCase()] = (keep[l.toUpperCase()]||0)+1;
+        if (r['rank_recommend'] === l.toUpperCase()) recommend[l.toUpperCase()] = (recommend[l.toUpperCase()]||0)+1;
+        if (r[l+'_adj'] && Array.isArray(r[l+'_adj'])) {
+          r[l+'_adj'].forEach(a => { adj[l][a] = (adj[l][a]||0)+1; });
+        }
+        if (r[l+'_occasion']) { occ[l][r[l+'_occasion']] = (occ[l][r[l+'_occasion']]||0)+1; }
+      });
+    });
+
+    const avgP = {};
+    ['a','b','c','d'].forEach(l => {
+      avgP[l] = prices[l].length ? Math.round(prices[l].reduce((a,b)=>a+b,0)/prices[l].length) : 0;
+    });
+
+    // Naming winner
+    const namingLabels = {mood:'Bold Ease',mood_ingredient:'Bold Cedar',ingredient:'Clean Mango Dusk'};
+    const namingPrinciples = {mood:'Mood',mood_ingredient:'Mood + Ingredient',ingredient:'Only Ingredient'};
+    const namingTotal = Object.values(naming).reduce((a,b)=>a+b,0);
+    let namingWinner = 'mood'; let nMax = 0;
+    Object.keys(naming).forEach(k => { if(naming[k]>nMax){nMax=naming[k];namingWinner=k;} });
+
+    // Keep winner
+    let keepWinner = 'A'; let kMax = 0;
+    Object.keys(keep).forEach(k => { if(keep[k]>kMax){kMax=keep[k];keepWinner=k;} });
+    const keepTotal = Object.values(keep).reduce((a,b)=>a+b,0);
+
+    // Recommend winner
+    let recWinner = 'A'; let rMax = 0;
+    Object.keys(recommend).forEach(k => { if(recommend[k]>rMax){rMax=recommend[k];recWinner=k;} });
+    const recTotal = Object.values(recommend).reduce((a,b)=>a+b,0);
+
+    let html = '';
+
+    // KPIs
+    const completionRate = total ? Math.round((completed.length/total)*100) : 0;
+    html += `<div class="kpi-row">
+      <div class="kpi"><div class="kpi-label">Teilnehmer</div><div class="kpi-value">${total}</div><div class="kpi-sub">gestartet</div></div>
+      <div class="kpi"><div class="kpi-label">Abgeschlossen</div><div class="kpi-value">${completed.length}</div><div class="kpi-sub">${completionRate}% Completion</div></div>
+      <div class="kpi"><div class="kpi-label">Naming Winner</div><div class="kpi-value" style="font-size:18px;font-family:Georgia,serif">${namingLabels[namingWinner]||'–'}</div><div class="kpi-sub">${pct(nMax,namingTotal)} der Stimmen</div></div>
+      <div class="kpi"><div class="kpi-label">Favorit</div><div class="kpi-value">Duft ${keepWinner}</div><div class="kpi-sub">würden behalten</div></div>
+    </div>`;
+
+    // Demografie
+    html += '<h2 class="section-heading">Demografie</h2><div class="grid-2">';
+    const gTotal = Object.values(gender).reduce((a,b)=>a+b,0);
+    html += `<div class="panel"><div class="panel-label">Geschlecht</div><div class="bar-chart">
+      ${bar('Männlich',gender.m||0,gTotal)} ${bar('Weiblich',gender.w||0,gTotal)} ${bar('Divers',gender.d||0,gTotal)}
+    </div></div>`;
+    const aTotal = Object.values(age).reduce((a,b)=>a+b,0);
+    html += `<div class="panel"><div class="panel-label">Altersgruppe</div><div class="bar-chart">
+      ${bar('16–20',age['16-20']||0,aTotal)} ${bar('21–25',age['21-25']||0,aTotal)} ${bar('26–32',age['26-32']||0,aTotal)} ${bar('33+',age['33+']||0,aTotal)}
+    </div></div>`;
+    html += '</div><div class="divider"></div>';
+
+    // Preise
+    html += '<h2 class="section-heading">Preisbereitschaft — Durchschnitt</h2>';
+    html += '<div class="grid-4">';
+    ['a','b','c','d'].forEach(l => {
+      html += `<div class="price-card"><div class="price-letter">Duft ${l.toUpperCase()}</div><div class="price-avg">€ ${avgP[l]||'–'}</div><div class="price-unit">Ø aus ${prices[l].length} Angaben</div></div>`;
+    });
+    html += '</div><div class="divider"></div>';
+
+    // Naming
+    html += '<h2 class="section-heading">Naming-Prinzip</h2><div class="panel">';
+    const namingOrder = Object.keys(naming).sort((a,b) => naming[b]-naming[a]);
+    namingOrder.forEach((k,i) => {
+      html += `<div class="naming-row${i===0?' winner':''}">
+        <div style="flex:1"><div class="naming-name">${namingLabels[k]}</div><div class="naming-principle">${namingPrinciples[k]}</div></div>
+        <div class="naming-pct">${pct(naming[k]||0,namingTotal)}</div>
+      </div>`;
+    });
+    html += '</div><div class="divider"></div>';
+
+    // Ranking
+    html += '<h2 class="section-heading">Duft-Ranking</h2><div class="grid-2">';
+    html += `<div class="panel"><div class="panel-label">Würden behalten</div><div class="bar-chart">
+      ${['A','B','C','D'].map(l => bar('Duft '+l, keep[l]||0, keepTotal, l===keepWinner?'accent':'')).join('')}
+    </div></div>`;
+    html += `<div class="panel"><div class="panel-label">Würden empfehlen</div><div class="bar-chart">
+      ${['A','B','C','D'].map(l => bar('Duft '+l, recommend[l]||0, recTotal, l===recWinner?'green':'')).join('')}
+    </div></div>`;
+    html += '</div><div class="divider"></div>';
+
+    // Adjektive Tabs
+    html += '<h2 class="section-heading">Adjektive & Occasions</h2><div class="panel">';
+    html += '<div class="scent-tabs">';
+    ['A','B','C','D'].forEach((l,i) => {
+      html += `<div class="scent-tab${i===0?' active':''}" onclick="switchTab('${l}')" id="tab-${l}">Duft ${l}</div>`;
+    });
+    html += '</div>';
+
+    ['A','B','C','D'].forEach((l,i) => {
+      const lc = l.toLowerCase();
+      const adjData = adj[lc]||{};
+      const occData = occ[lc]||{};
+      const adjSorted = Object.keys(adjData).sort((a,b) => adjData[b]-adjData[a]);
+      const occTotal = Object.values(occData).reduce((a,b)=>a+b,0);
+      const occLabels = {morgens:'Morgens / Daily',sport:'Nach dem Sport',abends:'Abends / Ausgehen',work:'Arbeit / Alltag',nie:'Würde nicht tragen'};
+
+      html += `<div id="scent-panel-${l}" style="display:${i===0?'block':'none'}">
+        <div style="margin-bottom:20px"><div class="panel-label" style="margin-bottom:12px">Top Adjektive</div>
+        <div class="tag-cloud">
+          ${adjSorted.slice(0,10).map((a,idx) => `<div class="tag-item${idx<3?' top':''}">${a}<span class="cnt">×${adjData[a]}</span></div>`).join('')}
+          ${adjSorted.length===0?'<span style="font-size:13px;color:var(--text-muted)">Noch keine Daten</span>':''}
+        </div></div>
+        <div><div class="panel-label" style="margin-bottom:12px">Occasion</div><div class="bar-chart">
+          ${['morgens','sport','abends','work','nie'].map(o => bar(occLabels[o], occData[o]||0, occTotal)).join('')}
+        </div></div>
+      </div>`;
+    });
+    html += '</div>';
+
+    document.getElementById('dashBody').innerHTML = html;
+    document.getElementById('lastUpdated').textContent = 'Zuletzt: ' + new Date().toLocaleTimeString('de-DE');
+  }
+
+  function switchTab(letter) {
+    ['A','B','C','D'].forEach(l => {
+      document.getElementById('tab-'+l).classList.toggle('active', l===letter);
+      const p = document.getElementById('scent-panel-'+l);
+      if(p) p.style.display = l===letter?'block':'none';
+    });
+  }
+
+  loadData();
+</script>
+</body>
+</html>
