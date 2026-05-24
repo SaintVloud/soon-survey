@@ -219,9 +219,60 @@
   /* ── Loading / empty ── */
   .loading { text-align:center; padding:80px; color:var(--text-muted); font-size:14px; }
   .empty { font-size:13px; color:var(--text-muted); padding:16px 0; }
+
+  /* ── Login Screen ── */
+  .login-screen {
+    position:fixed; inset:0; background:var(--bg);
+    display:flex; align-items:center; justify-content:center;
+    z-index:9999;
+  }
+  .login-box {
+    width:100%; max-width:360px; padding:0 24px;
+  }
+  .login-brand {
+    font-size:10px; letter-spacing:0.35em; text-transform:uppercase;
+    color:var(--text-muted); margin-bottom:32px;
+  }
+  .login-heading {
+    font-size:22px; font-weight:300; letter-spacing:-0.01em; margin-bottom:8px;
+  }
+  .login-sub {
+    font-size:13px; color:var(--text-muted); margin-bottom:32px; line-height:1.6;
+  }
+  .login-input {
+    width:100%; padding:14px 16px; border:1px solid var(--border);
+    background:var(--white); border-radius:2px; font-size:15px;
+    font-family:var(--font); color:var(--text); margin-bottom:10px;
+    outline:none; transition:border-color 0.15s;
+  }
+  .login-input:focus { border-color:var(--text); }
+  .login-input.error { border-color:#E10600; }
+  .login-btn {
+    width:100%; padding:15px; background:var(--text); color:var(--white);
+    border:none; border-radius:2px; font-size:12px; letter-spacing:0.15em;
+    text-transform:uppercase; font-family:var(--font); cursor:pointer;
+    transition:opacity 0.15s;
+  }
+  .login-btn:hover { opacity:0.8; }
+  .login-error {
+    font-size:12px; color:#E10600; margin-top:8px; display:none;
+  }
 </style>
 </head>
 <body>
+
+<!-- Login Screen -->
+<div class="login-screen" id="loginScreen">
+  <div class="login-box">
+    <div class="login-brand">Soon — Fragrance Lab</div>
+    <h1 class="login-heading">Dashboard</h1>
+    <p class="login-sub">Nur für interne Nutzung.</p>
+    <input type="password" class="login-input" id="loginInput"
+           placeholder="Passwort" onkeydown="if(event.key==='Enter') checkLogin()">
+    <button class="login-btn" onclick="checkLogin()">Zugang</button>
+    <div class="login-error" id="loginError">Falsches Passwort.</div>
+  </div>
+</div>
 
 <!-- Header -->
 <div class="header">
@@ -753,7 +804,30 @@ async function loadData() {
   render();
 }
 
-loadData();
+// ── Login ─────────────────────────────────────────────────────────────────────
+const DASHBOARD_PW = 'soon2025';
+
+function checkLogin() {
+  const val = document.getElementById('loginInput').value;
+  const input = document.getElementById('loginInput');
+  const err = document.getElementById('loginError');
+  if (val === DASHBOARD_PW) {
+    sessionStorage.setItem('dash_auth', '1');
+    document.getElementById('loginScreen').style.display = 'none';
+    loadData();
+  } else {
+    input.classList.add('error');
+    err.style.display = 'block';
+    input.value = '';
+    input.focus();
+  }
+}
+
+// Auto-login wenn Session noch aktiv
+if (sessionStorage.getItem('dash_auth') === '1') {
+  document.getElementById('loginScreen').style.display = 'none';
+  loadData();
+}
 </script>
 </body>
 </html>
