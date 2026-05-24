@@ -183,7 +183,14 @@
   .funnel-n { font-size:12px; color:var(--text-muted); min-width:40px; text-align:right; flex-shrink:0; }
 
   /* ── Feedback quotes ── */
-  .quotes-list { display:flex; flex-direction:column; gap:10px; }
+  .quotes-list {
+    display:flex; flex-direction:column; gap:10px;
+    max-height:360px; overflow-y:auto;
+    scrollbar-width:thin; scrollbar-color:var(--border) transparent;
+  }
+  .quotes-list::-webkit-scrollbar { width:4px; }
+  .quotes-list::-webkit-scrollbar-track { background:transparent; }
+  .quotes-list::-webkit-scrollbar-thumb { background:var(--border); border-radius:2px; }
   .quote {
     padding:14px 16px; background:var(--surface); border:1px solid var(--border);
     border-radius:2px; font-size:13px; line-height:1.6; color:var(--text);
