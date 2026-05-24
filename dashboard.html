@@ -4,251 +4,756 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>SOON — Survey Dashboard</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
   :root {
-    --bg: #E6E4E0; --surface: #F0EEE9; --text: #1A1A1A; --text-muted: #6B6B6B;
-    --accent: #E10600; --border: #D0CEC9; --white: #FFFFFF; --green: #2D6A4F;
+    --bg: #E6E4E0; --surface: #F0EEE9; --text: #1A1A1A;
+    --text-muted: #6B6B6B; --accent: #E10600; --border: #D0CEC9;
+    --white: #FFFFFF; --green: #2A7A55;
+    --font: 'Inter', -apple-system, BlinkMacSystemFont, 'Helvetica Neue', Arial, sans-serif;
   }
   * { margin:0; padding:0; box-sizing:border-box; }
-  body { background:var(--bg); color:var(--text); font-family:'Helvetica Neue',sans-serif; min-height:100vh; }
+  body { background:var(--bg); color:var(--text); font-family:var(--font); min-height:100vh; }
 
-  .header { padding:32px; border-bottom:1px solid var(--border); display:flex; justify-content:space-between; align-items:flex-end; }
-  .brand { font-size:10px; letter-spacing:0.35em; text-transform:uppercase; color:var(--text-muted); margin-bottom:6px; }
-  .title { font-family:'Georgia',serif; font-size:24px; font-weight:400; }
-  .subtitle { font-size:12px; color:var(--text-muted); margin-top:4px; }
-  .refresh-btn { padding:10px 20px; background:var(--text); color:var(--white); border:none; border-radius:2px; font-size:11px; letter-spacing:0.15em; text-transform:uppercase; cursor:pointer; }
+  /* ── Header ── */
+  .header {
+    padding:24px 32px; border-bottom:1px solid var(--border);
+    display:flex; justify-content:space-between; align-items:flex-end;
+    background:var(--bg);
+  }
+  .brand { font-size:10px; letter-spacing:0.35em; text-transform:uppercase; color:var(--text-muted); margin-bottom:4px; }
+  .title { font-family:var(--font); font-size:22px; font-weight:300; letter-spacing:-0.01em; }
+  .header-right { display:flex; align-items:center; gap:16px; }
+  .last-updated { font-size:11px; color:var(--text-muted); }
+  .phase-pill {
+    padding:4px 10px; border-radius:2px; font-size:10px; font-weight:600;
+    letter-spacing:0.15em; text-transform:uppercase;
+  }
+  .phase-pill.dev   { background:#FF6B00; color:#fff; }
+  .phase-pill.pilot { background:var(--green); color:#fff; }
+  .phase-pill.broad { background:#2B6CB0; color:#fff; }
+  .refresh-btn {
+    padding:9px 18px; background:var(--text); color:var(--white); border:none;
+    border-radius:2px; font-size:11px; letter-spacing:0.15em; text-transform:uppercase;
+    cursor:pointer; transition:opacity 0.15s;
+  }
+  .refresh-btn:hover { opacity:0.8; }
 
-  .body { padding:32px; max-width:1200px; margin:0 auto; }
+  /* ── Filter Bar ── */
+  .filter-bar {
+    position:sticky; top:0; z-index:50;
+    background:var(--surface); border-bottom:1px solid var(--border);
+    padding:14px 32px; display:flex; align-items:center; gap:40px;
+  }
+  .filter-group { display:flex; align-items:center; gap:12px; }
+  .filter-label { font-size:11px; letter-spacing:0.2em; text-transform:uppercase; color:var(--text-muted); white-space:nowrap; }
 
+  /* Dual age slider */
+  .age-slider-wrap { display:flex; align-items:center; gap:10px; }
+  .age-val { font-size:13px; font-family:var(--font); min-width:24px; text-align:center; }
+  .range-slider { position:relative; width:160px; height:20px; }
+  .range-slider-track {
+    position:absolute; top:50%; left:0; right:0;
+    height:3px; background:var(--border); transform:translateY(-50%); border-radius:2px;
+  }
+  .range-slider-fill {
+    position:absolute; height:100%; background:var(--text); border-radius:2px;
+  }
+  .range-slider input[type=range] {
+    position:absolute; width:100%; height:100%; top:0; left:0;
+    margin:0; appearance:none; -webkit-appearance:none;
+    background:transparent; pointer-events:none;
+  }
+  .range-slider input[type=range]::-webkit-slider-thumb {
+    appearance:none; -webkit-appearance:none;
+    width:14px; height:14px; border-radius:50%;
+    background:var(--text); cursor:pointer; pointer-events:all;
+    border:2px solid var(--white); box-shadow:0 1px 3px rgba(0,0,0,0.25);
+  }
+  .range-slider input[type=range]::-moz-range-thumb {
+    width:14px; height:14px; border-radius:50%;
+    background:var(--text); cursor:pointer; pointer-events:all;
+    border:2px solid var(--white); box-shadow:0 1px 3px rgba(0,0,0,0.25);
+  }
+
+  /* Gender filter */
+  .gender-btns { display:flex; gap:4px; }
+  .gender-btn {
+    padding:6px 12px; font-size:11px; border:1px solid var(--border);
+    border-radius:2px; cursor:pointer; background:var(--white);
+    transition:all 0.15s; letter-spacing:0.05em;
+  }
+  .gender-btn:hover { border-color:var(--text-muted); }
+  .gender-btn.active { background:var(--text); color:var(--white); border-color:var(--text); }
+
+  .filter-result { font-size:12px; color:var(--text-muted); margin-left:auto; }
+  .filter-result strong { color:var(--text); }
+
+  /* ── Tab Navigation ── */
+  .tab-nav {
+    position:sticky; top:49px; z-index:40;
+    background:var(--bg); border-bottom:1px solid var(--border);
+    padding:0 32px; display:flex; gap:0;
+  }
+  .tab-btn {
+    padding:14px 20px; font-size:12px; letter-spacing:0.1em; text-transform:uppercase;
+    border:none; background:transparent; cursor:pointer; color:var(--text-muted);
+    border-bottom:2px solid transparent; margin-bottom:-1px;
+    transition:color 0.15s, border-color 0.15s;
+  }
+  .tab-btn:hover { color:var(--text); }
+  .tab-btn.active { color:var(--text); border-bottom-color:var(--text); }
+
+  /* ── Body ── */
+  .body { padding:32px; max-width:1280px; margin:0 auto; }
+
+  /* ── KPIs ── */
   .kpi-row { display:grid; grid-template-columns:repeat(auto-fit,minmax(160px,1fr)); gap:12px; margin-bottom:32px; }
   .kpi { background:var(--white); border:1px solid var(--border); border-radius:2px; padding:20px 24px; }
   .kpi-label { font-size:10px; letter-spacing:0.3em; text-transform:uppercase; color:var(--text-muted); margin-bottom:8px; }
-  .kpi-value { font-family:'Georgia',serif; font-size:32px; font-weight:400; line-height:1; }
+  .kpi-value { font-family:var(--font); font-size:32px; font-weight:300; line-height:1; letter-spacing:-0.02em; }
+  .kpi-value.sm { font-size:20px; }
   .kpi-sub { font-size:11px; color:var(--text-muted); margin-top:6px; }
+  .kpi-accent { border-left:3px solid var(--accent); }
+  .kpi-green  { border-left:3px solid var(--green); }
+  .kpi-blue   { border-left:3px solid #2B6CB0; }
 
+  /* ── Grid ── */
   .grid-2 { display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-bottom:16px; }
+  .grid-3 { display:grid; grid-template-columns:1fr 1fr 1fr; gap:16px; margin-bottom:16px; }
   .grid-4 { display:grid; grid-template-columns:repeat(4,1fr); gap:16px; margin-bottom:16px; }
-  @media(max-width:900px){ .grid-2{grid-template-columns:1fr;} .grid-4{grid-template-columns:1fr 1fr;} }
+  @media(max-width:1000px){ .grid-4{grid-template-columns:1fr 1fr;} }
+  @media(max-width:720px) { .grid-2,.grid-3{grid-template-columns:1fr;} }
 
+  /* ── Panel ── */
   .panel { background:var(--white); border:1px solid var(--border); border-radius:2px; padding:24px; }
+  .panel.mb { margin-bottom:16px; }
   .panel-label { font-size:10px; letter-spacing:0.3em; text-transform:uppercase; color:var(--text-muted); margin-bottom:16px; }
+  .panel-title { font-family:var(--font); font-size:16px; font-weight:400; margin-bottom:16px; }
+  .section-heading { font-family:var(--font); font-size:18px; font-weight:300; letter-spacing:-0.01em; margin:32px 0 16px; }
+  .divider { height:1px; background:var(--border); margin:32px 0; }
 
+  /* ── Bar chart ── */
   .bar-chart { display:flex; flex-direction:column; gap:10px; }
   .bar-row { display:flex; align-items:center; gap:12px; }
-  .bar-label { font-size:12px; width:120px; flex-shrink:0; }
-  .bar-track { flex:1; background:var(--bg); border-radius:1px; height:8px; overflow:hidden; }
+  .bar-label { font-size:12px; min-width:110px; flex-shrink:0; color:var(--text); }
+  .bar-track { flex:1; background:var(--bg); border-radius:1px; height:7px; overflow:hidden; }
   .bar-fill { height:100%; border-radius:1px; background:var(--text); transition:width 0.6s ease; }
   .bar-fill.accent { background:var(--accent); }
-  .bar-fill.green { background:var(--green); }
-  .bar-count { font-size:12px; color:var(--text-muted); width:32px; text-align:right; flex-shrink:0; }
+  .bar-fill.green  { background:var(--green); }
+  .bar-fill.muted  { background:var(--border); }
+  .bar-pct  { font-size:11px; color:var(--text-muted); width:36px; text-align:right; flex-shrink:0; }
+  .bar-count { font-size:11px; color:var(--text-muted); width:24px; text-align:right; flex-shrink:0; }
 
+  /* ── Tag cloud ── */
+  .tag-cloud { display:flex; flex-wrap:wrap; gap:7px; }
+  .tag-item {
+    padding:5px 11px; background:var(--surface); border:1px solid var(--border);
+    border-radius:100px; font-size:12px; display:flex; align-items:center; gap:5px;
+  }
+  .tag-item.t1 { background:var(--text); color:var(--white); border-color:var(--text); font-size:13px; }
+  .tag-item.t2 { background:#3A3A3A; color:var(--white); border-color:#3A3A3A; }
+  .tag-item.t3 { background:#6B6B6B; color:var(--white); border-color:#6B6B6B; }
+  .tag-item .cnt { font-size:10px; opacity:0.55; }
+
+  /* ── Price cards ── */
   .price-card { background:var(--surface); border:1px solid var(--border); border-radius:2px; padding:20px; text-align:center; }
-  .price-letter { font-family:'Georgia',serif; font-size:20px; margin-bottom:8px; }
-  .price-avg { font-family:'Georgia',serif; font-size:32px; }
-  .price-unit { font-size:11px; color:var(--text-muted); margin-top:4px; }
+  .price-letter { font-family:var(--font); font-size:18px; margin-bottom:6px; }
+  .price-avg { font-family:var(--font); font-size:30px; font-weight:300; letter-spacing:-0.02em; line-height:1; }
+  .price-unit { font-size:11px; color:var(--text-muted); margin-top:6px; }
 
-  .naming-row { display:flex; align-items:center; gap:12px; padding:14px 18px; border:1px solid var(--border); border-radius:2px; margin-bottom:8px; }
+  /* ── Naming ── */
+  .naming-row {
+    display:flex; align-items:center; gap:12px; padding:14px 18px;
+    border:1px solid var(--border); border-radius:2px; margin-bottom:8px;
+  }
   .naming-row.winner { border-color:var(--text); background:var(--text); color:var(--white); }
-  .naming-name { font-family:'Georgia',serif; font-size:15px; flex:1; }
-  .naming-principle { font-size:10px; letter-spacing:0.2em; text-transform:uppercase; color:var(--text-muted); }
-  .naming-row.winner .naming-principle { color:rgba(255,255,255,0.5); }
-  .naming-pct { font-family:'Georgia',serif; font-size:20px; }
+  .naming-name { font-family:var(--font); font-size:15px; flex:1; }
+  .naming-pct { font-family:var(--font); font-size:20px; }
 
-  .tag-cloud { display:flex; flex-wrap:wrap; gap:8px; }
-  .tag-item { padding:6px 12px; background:var(--surface); border:1px solid var(--border); border-radius:100px; font-size:12px; display:flex; align-items:center; gap:6px; }
-  .tag-item.top { background:var(--text); color:var(--white); border-color:var(--text); }
-  .tag-item .cnt { font-size:10px; opacity:0.6; }
+  /* ── Completion funnel ── */
+  .funnel-row { display:flex; align-items:center; gap:14px; padding:10px 0; border-bottom:1px solid var(--bg); }
+  .funnel-label { font-size:12px; min-width:160px; flex-shrink:0; }
+  .funnel-track { flex:1; background:var(--bg); border-radius:1px; height:24px; overflow:hidden; }
+  .funnel-fill { height:100%; border-radius:1px; background:var(--text); display:flex; align-items:center; padding-left:10px; transition:width 0.6s ease; min-width:2px; }
+  .funnel-fill-text { font-size:11px; color:var(--white); white-space:nowrap; }
+  .funnel-n { font-size:12px; color:var(--text-muted); min-width:40px; text-align:right; flex-shrink:0; }
 
-  .scent-tabs { display:flex; gap:4px; margin-bottom:20px; }
-  .scent-tab { padding:8px 16px; font-size:12px; border:1px solid var(--border); border-radius:2px; cursor:pointer; background:var(--surface); transition:all 0.2s; }
-  .scent-tab.active { background:var(--text); color:var(--white); border-color:var(--text); }
+  /* ── Feedback quotes ── */
+  .quotes-list { display:flex; flex-direction:column; gap:10px; }
+  .quote {
+    padding:14px 16px; background:var(--surface); border:1px solid var(--border);
+    border-radius:2px; font-size:13px; line-height:1.6; color:var(--text);
+    border-left:3px solid var(--border);
+  }
+  .quote-meta { font-size:11px; color:var(--text-muted); margin-top:6px; }
+  .no-data { font-size:13px; color:var(--text-muted); padding:20px 0; }
 
-  .section-heading { font-family:'Georgia',serif; font-size:18px; font-weight:400; margin:32px 0 16px; }
-  .divider { height:1px; background:var(--border); margin:32px 0; }
-  .loading { text-align:center; padding:80px; color:var(--text-muted); }
+  /* ── Scent hero ── */
+  .scent-hero {
+    display:flex; align-items:center; gap:20px;
+    padding:24px; background:var(--text); color:var(--white);
+    border-radius:2px; margin-bottom:24px;
+  }
+  .scent-hero-letter {
+    width:64px; height:64px; border:1px solid rgba(255,255,255,0.2);
+    display:flex; align-items:center; justify-content:center;
+    font-family:var(--font); font-size:28px; flex-shrink:0; border-radius:2px;
+  }
+  .scent-hero-kpis { display:flex; gap:40px; flex:1; }
+  .scent-hero-kpi .val { font-family:var(--font); font-size:28px; font-weight:300; letter-spacing:-0.02em; }
+  .scent-hero-kpi .lbl { font-size:11px; letter-spacing:0.2em; text-transform:uppercase; opacity:0.6; margin-top:2px; }
+
+  /* ── Intensity scale visual ── */
+  .intensity-visual { display:flex; align-items:center; gap:8px; margin-bottom:6px; }
+  .intensity-dot {
+    width:12px; height:12px; border-radius:50%;
+    background:var(--border); flex-shrink:0; transition:background 0.3s;
+  }
+  .intensity-dot.filled { background:var(--text); }
+  .intensity-avg-label { font-size:13px; color:var(--text-muted); margin-left:4px; }
+
+  /* ── Loading / empty ── */
+  .loading { text-align:center; padding:80px; color:var(--text-muted); font-size:14px; }
+  .empty { font-size:13px; color:var(--text-muted); padding:16px 0; }
 </style>
 </head>
 <body>
 
+<!-- Header -->
 <div class="header">
   <div>
     <div class="brand">Soon — Fragrance Lab</div>
     <h1 class="title">Survey Dashboard</h1>
-    <div class="subtitle" id="lastUpdated">Lädt …</div>
   </div>
-  <button class="refresh-btn" onclick="loadData()">Aktualisieren</button>
+  <div class="header-right">
+    <span class="last-updated" id="lastUpdated">Lädt …</span>
+    <span class="phase-pill dev" id="phasePill">DEV</span>
+    <button class="refresh-btn" onclick="loadData()">Aktualisieren</button>
+  </div>
 </div>
 
+<!-- Filter Bar -->
+<div class="filter-bar">
+  <div class="filter-group">
+    <span class="filter-label">Alter</span>
+    <div class="age-slider-wrap">
+      <span class="age-val" id="ageMinVal">16</span>
+      <div class="range-slider" id="rangeSlider">
+        <div class="range-slider-track">
+          <div class="range-slider-fill" id="sliderFill"></div>
+        </div>
+        <input type="range" id="ageMin" min="16" max="80" value="16" step="1" oninput="onSlider()">
+        <input type="range" id="ageMax" min="16" max="80" value="80" step="1" oninput="onSlider()">
+      </div>
+      <span class="age-val" id="ageMaxVal">80</span>
+    </div>
+  </div>
+
+  <div class="filter-group">
+    <span class="filter-label">Geschlecht</span>
+    <div class="gender-btns">
+      <button class="gender-btn active" data-g="all"  onclick="setGender(this)">Alle</button>
+      <button class="gender-btn"        data-g="m"    onclick="setGender(this)">Männlich</button>
+      <button class="gender-btn"        data-g="w"    onclick="setGender(this)">Weiblich</button>
+      <button class="gender-btn"        data-g="d"    onclick="setGender(this)">Divers</button>
+    </div>
+  </div>
+
+  <div class="filter-group">
+    <span class="filter-label">Phase</span>
+    <div class="gender-btns">
+      <button class="gender-btn active" data-phase="dev"   onclick="setPhase(this)">Dev</button>
+      <button class="gender-btn"        data-phase="pilot" onclick="setPhase(this)">Pilot</button>
+      <button class="gender-btn"        data-phase="broad" onclick="setPhase(this)">Broad</button>
+    </div>
+  </div>
+
+  <span class="filter-result" id="filterResult">— Teilnehmer</span>
+</div>
+
+<!-- Tab Navigation -->
+<div class="tab-nav">
+  <button class="tab-btn active" onclick="switchTab('overview')">Übersicht</button>
+  <button class="tab-btn" onclick="switchTab('A')">Duft A</button>
+  <button class="tab-btn" onclick="switchTab('B')">Duft B</button>
+  <button class="tab-btn" onclick="switchTab('C')">Duft C</button>
+  <button class="tab-btn" onclick="switchTab('D')">Duft D</button>
+</div>
+
+<!-- Content -->
 <div class="body" id="dashBody">
   <div class="loading">Daten werden geladen …</div>
 </div>
 
 <script>
-  const { createClient } = supabase;
-  const sb = createClient(
-    'https://xbyaffdahcndvwsvkyhf.supabase.co',
-    'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhieWFmZmRhaGNuZHZ3c3ZreWhmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzczNjc5NDQsImV4cCI6MjA5Mjk0Mzk0NH0.l43H1XIgM7R9P5dWSYeSWz8hxbpps8_7zML2yJ_obM4'
-  );
+const { createClient } = supabase;
+const sb = createClient(
+  'https://xbyaffdahcndvwsvkyhf.supabase.co',
+  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhieWFmZmRhaGNuZHZ3c3ZreWhmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzczNjc5NDQsImV4cCI6MjA5Mjk0Mzk0NH0.l43H1XIgM7R9P5dWSYeSWz8hxbpps8_7zML2yJ_obM4'
+);
 
-  function pct(v, t) { return t ? Math.round((v/t)*100)+'%' : '0%'; }
+// ── State ────────────────────────────────────────────────────────────────────
+let allRows = [];
+let ageRange = [16, 80];
+let genderFilter = 'all';
+let phaseFilter = 'dev';
+let activeTab = 'overview';
 
-  function bar(label, val, total, cls) {
-    const w = total ? Math.round((val/total)*100) : 0;
-    return `<div class="bar-row"><span class="bar-label">${label}</span><div class="bar-track"><div class="bar-fill ${cls||''}" style="width:${w}%"></div></div><span class="bar-count">${val}</span></div>`;
-  }
+// ── Helpers ──────────────────────────────────────────────────────────────────
+function pct(v, t) { return t ? Math.round((v / t) * 100) + '%' : '0%'; }
+function avg(arr)  { return arr.length ? (arr.reduce((a, b) => a + b, 0) / arr.length) : 0; }
+function esc(s)    { return String(s).replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
 
-  async function loadData() {
-    document.getElementById('dashBody').innerHTML = '<div class="loading">Daten werden geladen …</div>';
-    const { data, error } = await sb.from('survey_responses').select('*');
-    if (error) { document.getElementById('dashBody').innerHTML = '<div class="loading">Fehler: ' + error.message + '</div>'; return; }
+function bar(label, val, total, cls) {
+  const w = total ? Math.round((val / total) * 100) : 0;
+  return `<div class="bar-row">
+    <span class="bar-label">${label}</span>
+    <div class="bar-track"><div class="bar-fill ${cls||''}" style="width:${w}%"></div></div>
+    <span class="bar-pct">${pct(val,total)}</span>
+    <span class="bar-count">${val}</span>
+  </div>`;
+}
 
-    const rows = data || [];
-    const completed = rows.filter(r => r.completed);
-    const total = rows.length;
+function countArr(rows, field, val) {
+  return rows.filter(r => {
+    const v = r[field];
+    if (!v) return false;
+    return Array.isArray(v) ? v.includes(val) : v === val;
+  }).length;
+}
 
-    // Aggregieren
-    const gender = {m:0,w:0,d:0};
-    const age = {'16-20':0,'21-25':0,'26-32':0,'33+':0};
-    const naming = {mood:0,mood_ingredient:0,ingredient:0};
-    const prices = {a:[],b:[],c:[],d:[]};
-    const keep = {A:0,B:0,C:0,D:0};
-    const recommend = {A:0,B:0,C:0,D:0};
-    const adj = {a:{},b:{},c:{},d:{}};
-    const occ = {a:{},b:{},c:{},d:{}};
+function getAgeInt(r) {
+  const v = parseInt(r.age || r.age_range || '');
+  return isNaN(v) ? null : v;
+}
 
-    rows.forEach(r => {
-      if (r.gender) gender[r.gender] = (gender[r.gender]||0)+1;
-      if (r.age_range) age[r.age_range] = (age[r.age_range]||0)+1;
-      if (r.naming_winner) naming[r.naming_winner] = (naming[r.naming_winner]||0)+1;
-      ['a','b','c','d'].forEach(l => {
-        const p = parseFloat(r['price_'+l]);
-        if (!isNaN(p) && p > 0) prices[l].push(p);
-        if (r['keep'] === l.toUpperCase() || r['rank_keep'] === l.toUpperCase()) keep[l.toUpperCase()] = (keep[l.toUpperCase()]||0)+1;
-        if (r['rank_recommend'] === l.toUpperCase()) recommend[l.toUpperCase()] = (recommend[l.toUpperCase()]||0)+1;
-        if (r[l+'_adj'] && Array.isArray(r[l+'_adj'])) {
-          r[l+'_adj'].forEach(a => { adj[l][a] = (adj[l][a]||0)+1; });
-        }
-        if (r[l+'_occasion']) { occ[l][r[l+'_occasion']] = (occ[l][r[l+'_occasion']]||0)+1; }
-      });
-    });
+function bucketAge(rows) {
+  const buckets = {'16–20':0,'21–25':0,'26–32':0,'33–45':0,'46+':0};
+  rows.forEach(r => {
+    const a = getAgeInt(r);
+    if (a === null) return;
+    if (a <= 20)      buckets['16–20']++;
+    else if (a <= 25) buckets['21–25']++;
+    else if (a <= 32) buckets['26–32']++;
+    else if (a <= 45) buckets['33–45']++;
+    else              buckets['46+']++;
+  });
+  return buckets;
+}
 
-    const avgP = {};
-    ['a','b','c','d'].forEach(l => {
-      avgP[l] = prices[l].length ? Math.round(prices[l].reduce((a,b)=>a+b,0)/prices[l].length) : 0;
-    });
+// ── Filters ──────────────────────────────────────────────────────────────────
+function getFiltered() {
+  return allRows.filter(r => {
+    const a = getAgeInt(r);
+    const ageOk = a === null || (a >= ageRange[0] && a <= ageRange[1]);
+    const gOk   = genderFilter === 'all' || r.gender === genderFilter;
+    const pOk   = (r.phase || 'dev') === phaseFilter;
+    return ageOk && gOk && pOk;
+  });
+}
 
-    // Naming winner
-    const namingLabels = {mood:'Bold Ease',mood_ingredient:'Bold Cedar',ingredient:'Clean Mango Dusk'};
-    const namingPrinciples = {mood:'Mood',mood_ingredient:'Mood + Ingredient',ingredient:'Only Ingredient'};
-    const namingTotal = Object.values(naming).reduce((a,b)=>a+b,0);
-    let namingWinner = 'mood'; let nMax = 0;
-    Object.keys(naming).forEach(k => { if(naming[k]>nMax){nMax=naming[k];namingWinner=k;} });
+function setPhase(btn) {
+  document.querySelectorAll('[data-phase]').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  phaseFilter = btn.dataset.phase;
+  const pill = document.getElementById('phasePill');
+  pill.className = 'phase-pill ' + phaseFilter;
+  pill.textContent = btn.textContent.toUpperCase();
+  render();
+}
 
-    // Keep winner
-    let keepWinner = 'A'; let kMax = 0;
-    Object.keys(keep).forEach(k => { if(keep[k]>kMax){kMax=keep[k];keepWinner=k;} });
-    const keepTotal = Object.values(keep).reduce((a,b)=>a+b,0);
+function onSlider() {
+  let mn = parseInt(document.getElementById('ageMin').value);
+  let mx = parseInt(document.getElementById('ageMax').value);
+  if (mn > mx) { const tmp = mn; mn = mx; mx = tmp; }
+  ageRange = [mn, mx];
+  document.getElementById('ageMinVal').textContent = mn;
+  document.getElementById('ageMaxVal').textContent = mx;
+  updateSliderFill();
+  render();
+}
 
-    // Recommend winner
-    let recWinner = 'A'; let rMax = 0;
-    Object.keys(recommend).forEach(k => { if(recommend[k]>rMax){rMax=recommend[k];recWinner=k;} });
-    const recTotal = Object.values(recommend).reduce((a,b)=>a+b,0);
+function updateSliderFill() {
+  const mn = parseInt(document.getElementById('ageMin').value);
+  const mx = parseInt(document.getElementById('ageMax').value);
+  const min = 16, max = 80, range = max - min;
+  const left  = ((Math.min(mn,mx) - min) / range) * 100;
+  const right = ((Math.max(mn,mx) - min) / range) * 100;
+  document.getElementById('sliderFill').style.left  = left  + '%';
+  document.getElementById('sliderFill').style.width = (right - left) + '%';
+}
 
-    let html = '';
+function setGender(btn) {
+  document.querySelectorAll('.gender-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  genderFilter = btn.dataset.g;
+  render();
+}
 
-    // KPIs
-    const completionRate = total ? Math.round((completed.length/total)*100) : 0;
-    html += `<div class="kpi-row">
-      <div class="kpi"><div class="kpi-label">Teilnehmer</div><div class="kpi-value">${total}</div><div class="kpi-sub">gestartet</div></div>
-      <div class="kpi"><div class="kpi-label">Abgeschlossen</div><div class="kpi-value">${completed.length}</div><div class="kpi-sub">${completionRate}% Completion</div></div>
-      <div class="kpi"><div class="kpi-label">Naming Winner</div><div class="kpi-value" style="font-size:18px;font-family:Georgia,serif">${namingLabels[namingWinner]||'–'}</div><div class="kpi-sub">${pct(nMax,namingTotal)} der Stimmen</div></div>
-      <div class="kpi"><div class="kpi-label">Favorit</div><div class="kpi-value">Duft ${keepWinner}</div><div class="kpi-sub">würden behalten</div></div>
-    </div>`;
+// ── Tab switching ─────────────────────────────────────────────────────────────
+function switchTab(tab) {
+  activeTab = tab;
+  document.querySelectorAll('.tab-btn').forEach((b, i) => {
+    const tabs = ['overview','A','B','C','D'];
+    b.classList.toggle('active', tabs[i] === tab);
+  });
+  render();
+}
 
-    // Demografie
-    html += '<h2 class="section-heading">Demografie</h2><div class="grid-2">';
-    const gTotal = Object.values(gender).reduce((a,b)=>a+b,0);
-    html += `<div class="panel"><div class="panel-label">Geschlecht</div><div class="bar-chart">
-      ${bar('Männlich',gender.m||0,gTotal)} ${bar('Weiblich',gender.w||0,gTotal)} ${bar('Divers',gender.d||0,gTotal)}
-    </div></div>`;
-    const aTotal = Object.values(age).reduce((a,b)=>a+b,0);
-    html += `<div class="panel"><div class="panel-label">Altersgruppe</div><div class="bar-chart">
-      ${bar('16–20',age['16-20']||0,aTotal)} ${bar('21–25',age['21-25']||0,aTotal)} ${bar('26–32',age['26-32']||0,aTotal)} ${bar('33+',age['33+']||0,aTotal)}
-    </div></div>`;
-    html += '</div><div class="divider"></div>';
+// ── Main render ───────────────────────────────────────────────────────────────
+function render() {
+  const rows = getFiltered();
+  const n = rows.length;
+  document.getElementById('filterResult').innerHTML =
+    `<strong>${n}</strong> Teilnehmer im Filter`;
 
-    // Preise
-    html += '<h2 class="section-heading">Preisbereitschaft — Durchschnitt</h2>';
-    html += '<div class="grid-4">';
-    ['a','b','c','d'].forEach(l => {
-      html += `<div class="price-card"><div class="price-letter">Duft ${l.toUpperCase()}</div><div class="price-avg">€ ${avgP[l]||'–'}</div><div class="price-unit">Ø aus ${prices[l].length} Angaben</div></div>`;
-    });
-    html += '</div><div class="divider"></div>';
+  if (activeTab === 'overview') renderOverview(rows);
+  else renderScent(rows, activeTab);
+}
 
-    // Naming
-    html += '<h2 class="section-heading">Naming-Prinzip</h2><div class="panel">';
-    const namingOrder = Object.keys(naming).sort((a,b) => naming[b]-naming[a]);
-    namingOrder.forEach((k,i) => {
-      html += `<div class="naming-row${i===0?' winner':''}">
-        <div style="flex:1"><div class="naming-name">${namingLabels[k]}</div><div class="naming-principle">${namingPrinciples[k]}</div></div>
-        <div class="naming-pct">${pct(naming[k]||0,namingTotal)}</div>
-      </div>`;
-    });
-    html += '</div><div class="divider"></div>';
+// ── Overview ──────────────────────────────────────────────────────────────────
+function renderOverview(rows) {
+  const n = rows.length;
+  const completed = rows.filter(r => r.completed);
 
-    // Ranking
-    html += '<h2 class="section-heading">Duft-Ranking</h2><div class="grid-2">';
-    html += `<div class="panel"><div class="panel-label">Würden behalten</div><div class="bar-chart">
-      ${['A','B','C','D'].map(l => bar('Duft '+l, keep[l]||0, keepTotal, l===keepWinner?'accent':'')).join('')}
-    </div></div>`;
-    html += `<div class="panel"><div class="panel-label">Würden empfehlen</div><div class="bar-chart">
-      ${['A','B','C','D'].map(l => bar('Duft '+l, recommend[l]||0, recTotal, l===recWinner?'green':'')).join('')}
-    </div></div>`;
-    html += '</div><div class="divider"></div>';
-
-    // Adjektive Tabs
-    html += '<h2 class="section-heading">Adjektive & Occasions</h2><div class="panel">';
-    html += '<div class="scent-tabs">';
-    ['A','B','C','D'].forEach((l,i) => {
-      html += `<div class="scent-tab${i===0?' active':''}" onclick="switchTab('${l}')" id="tab-${l}">Duft ${l}</div>`;
-    });
-    html += '</div>';
-
-    ['A','B','C','D'].forEach((l,i) => {
-      const lc = l.toLowerCase();
-      const adjData = adj[lc]||{};
-      const occData = occ[lc]||{};
-      const adjSorted = Object.keys(adjData).sort((a,b) => adjData[b]-adjData[a]);
-      const occTotal = Object.values(occData).reduce((a,b)=>a+b,0);
-      const occLabels = {morgens:'Morgens / Daily',sport:'Nach dem Sport',abends:'Abends / Ausgehen',work:'Arbeit / Alltag',nie:'Würde nicht tragen'};
-
-      html += `<div id="scent-panel-${l}" style="display:${i===0?'block':'none'}">
-        <div style="margin-bottom:20px"><div class="panel-label" style="margin-bottom:12px">Top Adjektive</div>
-        <div class="tag-cloud">
-          ${adjSorted.slice(0,10).map((a,idx) => `<div class="tag-item${idx<3?' top':''}">${a}<span class="cnt">×${adjData[a]}</span></div>`).join('')}
-          ${adjSorted.length===0?'<span style="font-size:13px;color:var(--text-muted)">Noch keine Daten</span>':''}
-        </div></div>
-        <div><div class="panel-label" style="margin-bottom:12px">Occasion</div><div class="bar-chart">
-          ${['morgens','sport','abends','work','nie'].map(o => bar(occLabels[o], occData[o]||0, occTotal)).join('')}
-        </div></div>
-      </div>`;
-    });
-    html += '</div>';
-
-    document.getElementById('dashBody').innerHTML = html;
-    document.getElementById('lastUpdated').textContent = 'Zuletzt: ' + new Date().toLocaleTimeString('de-DE');
-  }
-
-  function switchTab(letter) {
+  // ─ Rankings ─
+  const rank1 = {A:0,B:0,C:0,D:0};
+  const rankSum = {A:0,B:0,C:0,D:0};
+  const rankN   = {A:0,B:0,C:0,D:0};
+  rows.forEach(r => {
     ['A','B','C','D'].forEach(l => {
-      document.getElementById('tab-'+l).classList.toggle('active', l===letter);
-      const p = document.getElementById('scent-panel-'+l);
-      if(p) p.style.display = l===letter?'block':'none';
+      for (let i = 1; i <= 4; i++) {
+        if (r['rank_'+i] === l) {
+          if (i === 1) rank1[l]++;
+          rankSum[l] += i;
+          rankN[l]++;
+        }
+      }
     });
-  }
+  });
+  const avgRank = {};
+  ['A','B','C','D'].forEach(l => {
+    avgRank[l] = rankN[l] ? (rankSum[l] / rankN[l]).toFixed(1) : '–';
+  });
+  const favorit = ['A','B','C','D'].reduce((a,b) => rank1[a] >= rank1[b] ? a : b);
 
-  loadData();
+  // ─ Preise ─
+  const prices = {a:[],b:[],c:[],d:[]};
+  rows.forEach(r => {
+    ['a','b','c','d'].forEach(l => {
+      const p = parseFloat(r['price_'+l]);
+      if (!isNaN(p) && p > 0) prices[l].push(p);
+    });
+  });
+  const avgP = {};
+  ['a','b','c','d'].forEach(l => { avgP[l] = avg(prices[l]); });
+
+  // ─ Naming ─
+  const naming = {mood:0,mood_ingredient:0,ingredient:0};
+  rows.forEach(r => { if (r.naming_winner) naming[r.naming_winner] = (naming[r.naming_winner]||0)+1; });
+  const namingTotal = Object.values(naming).reduce((a,b)=>a+b,0);
+  const namingLabels = {mood:'Bold Ease', mood_ingredient:'Bold Cedar', ingredient:'Clean Mango Dusk'};
+  const namingWinner = Object.keys(naming).reduce((a,b) => naming[a] >= naming[b] ? a : b);
+
+  // ─ Gender ─
+  const gender = {m:0,w:0,d:0};
+  rows.forEach(r => { if (r.gender) gender[r.gender] = (gender[r.gender]||0)+1; });
+  const gTotal = Object.values(gender).reduce((a,b)=>a+b,0);
+
+  // ─ Age buckets ─
+  const ageBuckets = bucketAge(rows);
+  const aTotal = Object.values(ageBuckets).reduce((a,b)=>a+b,0);
+
+  // ─ E-Mail ─
+  const emailCount = rows.filter(r => r.email && r.email.trim()).length;
+
+  // ─ Sport ─
+  const sportMakes = {ja:0, nein:0};
+  const sportWear  = {ja:0, manchmal:0, nein:0};
+  const sportTypes = [];
+  rows.forEach(r => {
+    if (r.sport_makes) sportMakes[r.sport_makes] = (sportMakes[r.sport_makes]||0) + 1;
+    if (r.sport_wear)  sportWear[r.sport_wear]   = (sportWear[r.sport_wear]||0)   + 1;
+    if (r.sport_type && r.sport_type.trim()) sportTypes.push(r);
+  });
+  const sportMakesN = Object.values(sportMakes).reduce((a,b)=>a+b,0);
+  const sportWearN  = Object.values(sportWear).reduce((a,b)=>a+b,0);
+
+  // ─ Funnel ─
+  const funnelLabels = ['01 — Über dich','02 — Duft (1)','03 — Duft (2)','04 — Duft (3)','05 — Duft (4)','06 — Ranking','07 — Naming','08 — Sport'];
+  const funnelCounts = funnelLabels.map((_, i) => rows.filter(r => r.block >= i+1).length);
+  const funnelMax = funnelCounts[0] || 1;
+
+  let html = '';
+
+  // KPIs
+  const complRate = n ? Math.round((completed.length / n) * 100) : 0;
+  html += `<div class="kpi-row">
+    <div class="kpi"><div class="kpi-label">Teilnehmer</div><div class="kpi-value">${n}</div><div class="kpi-sub">Gestartet</div></div>
+    <div class="kpi kpi-green"><div class="kpi-label">Abgeschlossen</div><div class="kpi-value">${completed.length}</div><div class="kpi-sub">${complRate}% Completion-Rate</div></div>
+    <div class="kpi kpi-blue"><div class="kpi-label">E-Mails</div><div class="kpi-value">${emailCount}</div><div class="kpi-sub">Launch-Liste</div></div>
+    <div class="kpi kpi-accent"><div class="kpi-label">Favorit</div><div class="kpi-value">Duft ${favorit}</div><div class="kpi-sub">${rank1[favorit]}× auf Platz 1</div></div>
+    <div class="kpi"><div class="kpi-label">Naming Winner</div><div class="kpi-value sm">${namingLabels[namingWinner]||'–'}</div><div class="kpi-sub">${pct(naming[namingWinner]||0, namingTotal)} der Stimmen</div></div>
+  </div>`;
+
+  // Demografie
+  html += '<h2 class="section-heading">Demografie</h2><div class="grid-2">';
+  html += `<div class="panel"><div class="panel-label">Geschlecht</div><div class="bar-chart">
+    ${bar('Männlich', gender.m||0, gTotal)}
+    ${bar('Weiblich', gender.w||0, gTotal)}
+    ${bar('Divers',   gender.d||0, gTotal)}
+  </div></div>`;
+  html += `<div class="panel"><div class="panel-label">Alter</div><div class="bar-chart">
+    ${Object.entries(ageBuckets).map(([k,v]) => bar(k, v, aTotal)).join('')}
+  </div></div>`;
+  html += '</div><div class="divider"></div>';
+
+  // Favoriten-Ranking
+  html += '<h2 class="section-heading">Favoriten-Ranking</h2><div class="grid-2">';
+  const rank1Total = Object.values(rank1).reduce((a,b)=>a+b,0);
+  html += `<div class="panel"><div class="panel-label">Platz 1 — Favorit</div><div class="bar-chart">
+    ${['A','B','C','D'].map(l => bar('Duft '+l, rank1[l], rank1Total, l===favorit?'accent':'')).join('')}
+  </div></div>`;
+  html += `<div class="panel"><div class="panel-label">Ø Rangposition (1 = beste)</div><div class="bar-chart">
+    ${['A','B','C','D'].map(l => {
+      const v = parseFloat(avgRank[l]) || 0;
+      const w = v ? Math.round((v/4)*100) : 0;
+      return `<div class="bar-row"><span class="bar-label">Duft ${l}</span><div class="bar-track"><div class="bar-fill" style="width:${w}%"></div></div><span class="bar-pct">${avgRank[l]}</span></div>`;
+    }).join('')}
+  </div></div>`;
+  html += '</div><div class="divider"></div>';
+
+  // Preisbereitschaft
+  html += '<h2 class="section-heading">Preisbereitschaft — Ø 50ml Extrait de Parfum</h2><div class="grid-4">';
+  ['a','b','c','d'].forEach(l => {
+    const a = avgP[l];
+    html += `<div class="price-card">
+      <div class="price-letter">Duft ${l.toUpperCase()}</div>
+      <div class="price-avg">${a ? '€ ' + Math.round(a) : '–'}</div>
+      <div class="price-unit">Ø aus ${prices[l].length} Angaben</div>
+    </div>`;
+  });
+  html += '</div><div class="divider"></div>';
+
+  // Naming
+  html += '<h2 class="section-heading">Naming</h2><div class="panel mb">';
+  Object.keys(naming).sort((a,b) => naming[b]-naming[a]).forEach((k,i) => {
+    html += `<div class="naming-row${i===0?' winner':''}">
+      <div class="naming-name">${namingLabels[k]}</div>
+      <div class="naming-pct">${pct(naming[k]||0, namingTotal)}</div>
+    </div>`;
+  });
+  html += '</div>';
+  // Naming feedback
+  const nFeedbacks = rows.filter(r => r.naming_feedback && r.naming_feedback.trim());
+  if (nFeedbacks.length) {
+    html += `<div class="panel mb"><div class="panel-label">Naming Feedback (${nFeedbacks.length})</div><div class="quotes-list">
+      ${nFeedbacks.map(r => `<div class="quote">${esc(r.naming_feedback)}<div class="quote-meta">Alter ${r.age||'–'} · ${r.gender === 'm' ? 'Männlich' : r.gender === 'w' ? 'Weiblich' : r.gender === 'd' ? 'Divers' : '–'}</div></div>`).join('')}
+    </div></div>`;
+  }
+  html += '<div class="divider"></div>';
+
+  // Sport & Duft
+  html += '<h2 class="section-heading">Sport & Duft</h2><div class="grid-2">';
+  html += `<div class="panel"><div class="panel-label">Machst du Sport? (${sportMakesN} Antworten)</div><div class="bar-chart">
+    ${bar('Ja',   sportMakes.ja||0,   sportMakesN)}
+    ${bar('Nein', sportMakes.nein||0, sportMakesN)}
+  </div></div>`;
+  html += `<div class="panel"><div class="panel-label">Trägst du Duft beim Sport? (${sportWearN} Antworten)</div><div class="bar-chart">
+    ${bar('Ja',       sportWear.ja||0,       sportWearN)}
+    ${bar('Manchmal', sportWear.manchmal||0, sportWearN)}
+    ${bar('Nein',     sportWear.nein||0,     sportWearN)}
+  </div></div>`;
+  html += '</div>';
+  if (sportTypes.length) {
+    const gLabel = g => g === 'm' ? 'Männlich' : g === 'w' ? 'Weiblich' : g === 'd' ? 'Divers' : '–';
+    html += `<div class="panel mb"><div class="panel-label">Welche Sportarten? (${sportTypes.length} Angaben)</div><div class="quotes-list">
+      ${sportTypes.map(r => `<div class="quote">${esc(r.sport_type)}<div class="quote-meta">Alter ${r.age||'–'} · ${gLabel(r.gender)}</div></div>`).join('')}
+    </div></div>`;
+  }
+  html += '<div class="divider"></div>';
+
+  // Completion Funnel
+  html += '<h2 class="section-heading">Completion Funnel</h2><div class="panel">';
+  funnelLabels.forEach((label, i) => {
+    const v = funnelCounts[i];
+    const w = funnelMax ? Math.round((v / funnelMax) * 100) : 0;
+    const pctStr = pct(v, funnelMax);
+    html += `<div class="funnel-row">
+      <span class="funnel-label">${label}</span>
+      <div class="funnel-track"><div class="funnel-fill" style="width:${w}%">
+        ${w > 12 ? `<span class="funnel-fill-text">${pctStr}</span>` : ''}
+      </div></div>
+      <span class="funnel-n">${v}</span>
+    </div>`;
+  });
+  html += '</div>';
+
+  document.getElementById('dashBody').innerHTML = html;
+}
+
+// ── Scent Detail ──────────────────────────────────────────────────────────────
+function renderScent(rows, letter) {
+  const l = letter.toLowerCase();
+
+  // Filter rows that evaluated this scent (have at least a price or intensity)
+  const sRows = rows.filter(r => r[l+'_intensity'] || r['price_'+l] || (r[l+'_adj'] && r[l+'_adj'].length));
+
+  // KPIs
+  const priceArr = sRows.map(r => parseFloat(r['price_'+l])).filter(v => !isNaN(v) && v > 0);
+  const intArr   = sRows.map(r => parseInt(r[l+'_intensity'])).filter(v => !isNaN(v) && v > 0);
+  const avgPrice = avg(priceArr);
+  const avgInt   = avg(intArr);
+
+  const rank1Count = rows.filter(r => r.rank_1 === letter).length;
+  const rankRows   = rows.filter(r => ['rank_1','rank_2','rank_3','rank_4'].some(k => r[k] === letter));
+  const rank1Pct   = rankRows.length ? Math.round((rank1Count / rankRows.length) * 100) : 0;
+
+  // Adjektive
+  const adjCount = {};
+  sRows.forEach(r => {
+    if (r[l+'_adj'] && Array.isArray(r[l+'_adj'])) {
+      r[l+'_adj'].forEach(a => { adjCount[a] = (adjCount[a]||0)+1; });
+    }
+  });
+  const adjSorted = Object.entries(adjCount).sort((a,b) => b[1]-a[1]);
+
+  // Intensität 1–5
+  const intDist = {1:0,2:0,3:0,4:0,5:0};
+  intArr.forEach(v => { if (intDist[v] !== undefined) intDist[v]++; });
+
+  // Gender perception
+  const gp = {maskulin:0,feminin:0,unisex:0};
+  sRows.forEach(r => { if (r[l+'_gender_perception']) gp[r[l+'_gender_perception']] = (gp[r[l+'_gender_perception']]||0)+1; });
+  const gpTotal = Object.values(gp).reduce((a,b)=>a+b,0);
+
+  // Occasion & Season
+  const occLabels = {alltag:'Alltag',buero:'Büro',ausgehen:'Ausgehen',sport:'Sport'};
+  const seaLabels = {fruehling:'Frühling',sommer:'Sommer',herbst:'Herbst',winter:'Winter'};
+  const occCount = {}; const seaCount = {};
+  sRows.forEach(r => {
+    const occ = r[l+'_occasion'];
+    const sea = r[l+'_season'];
+    if (Array.isArray(occ)) occ.forEach(v => { occCount[v] = (occCount[v]||0)+1; });
+    else if (occ) occCount[occ] = (occCount[occ]||0)+1;
+    if (Array.isArray(sea)) sea.forEach(v => { seaCount[v] = (seaCount[v]||0)+1; });
+    else if (sea) seaCount[sea] = (seaCount[sea]||0)+1;
+  });
+  const occTotal = Object.values(occCount).reduce((a,b)=>a+b,0);
+  const seaTotal = Object.values(seaCount).reduce((a,b)=>a+b,0);
+
+  // Feedback texts
+  const feedbacks = rows.filter(r => r[l+'_feedback'] && r[l+'_feedback'].trim());
+
+  // ─ Intensity dots ─
+  const dotsHtml = [1,2,3,4,5].map(i =>
+    `<div class="intensity-dot${avgInt >= i ? ' filled' : ''}"></div>`
+  ).join('');
+
+  let html = '';
+
+  // Scent Hero
+  html += `<div class="scent-hero">
+    <div class="scent-hero-letter">${letter}</div>
+    <div class="scent-hero-kpis">
+      <div class="scent-hero-kpi">
+        <div class="val">${avgPrice ? '€ ' + Math.round(avgPrice) : '–'}</div>
+        <div class="lbl">Ø Preisbereitschaft</div>
+      </div>
+      <div class="scent-hero-kpi">
+        <div class="val">${avgInt ? avgInt.toFixed(1) : '–'} / 5</div>
+        <div class="lbl">Ø Intensität</div>
+      </div>
+      <div class="scent-hero-kpi">
+        <div class="val">${rank1Pct}%</div>
+        <div class="lbl">auf Platz 1 gewählt</div>
+      </div>
+      <div class="scent-hero-kpi">
+        <div class="val">${sRows.length}</div>
+        <div class="lbl">Bewertungen</div>
+      </div>
+    </div>
+  </div>`;
+
+  html += '<div class="grid-2">';
+
+  // Adjektive
+  html += `<div class="panel"><div class="panel-label">Duftrichtungen (Mehrfachauswahl)</div>`;
+  if (adjSorted.length) {
+    html += '<div class="tag-cloud">' + adjSorted.map(([a,cnt], idx) => {
+      const cls = idx===0?'t1':idx===1?'t2':idx===2?'t3':'';
+      return `<div class="tag-item ${cls}">${esc(a)}<span class="cnt">×${cnt}</span></div>`;
+    }).join('') + '</div>';
+  } else {
+    html += '<div class="no-data">Noch keine Angaben.</div>';
+  }
+  html += '</div>';
+
+  // Intensität
+  const intMax = Math.max(...Object.values(intDist), 1);
+  html += `<div class="panel"><div class="panel-label">Intensität</div>
+    <div class="intensity-visual">${dotsHtml}<span class="intensity-avg-label">Ø ${avgInt ? avgInt.toFixed(1) : '–'}</span></div>
+    <div class="bar-chart" style="margin-top:14px">
+      ${[1,2,3,4,5].map(i => bar(i + (i===1?' – Intim':i===5?' – Intensiv':''), intDist[i], intMax)).join('')}
+    </div>
+  </div>`;
+
+  html += '</div><div class="grid-2" style="margin-top:16px">';
+
+  // Gender Perception
+  html += `<div class="panel"><div class="panel-label">Wirkung</div><div class="bar-chart">
+    ${bar('Maskulin', gp.maskulin||0, gpTotal)}
+    ${bar('Feminin',  gp.feminin||0,  gpTotal)}
+    ${bar('Unisex',   gp.unisex||0,   gpTotal)}
+  </div></div>`;
+
+  // Anlass
+  html += `<div class="panel"><div class="panel-label">Anlass (Mehrfachauswahl)</div><div class="bar-chart">
+    ${Object.entries(occLabels).map(([k,lbl]) => bar(lbl, occCount[k]||0, occTotal)).join('')}
+    ${occTotal===0?'<div class="no-data">Noch keine Angaben.</div>':''}
+  </div></div>`;
+
+  html += '</div><div class="grid-2" style="margin-top:16px">';
+
+  // Jahreszeit
+  html += `<div class="panel"><div class="panel-label">Jahreszeit (Mehrfachauswahl)</div><div class="bar-chart">
+    ${Object.entries(seaLabels).map(([k,lbl]) => bar(lbl, seaCount[k]||0, seaTotal)).join('')}
+    ${seaTotal===0?'<div class="no-data">Noch keine Angaben.</div>':''}
+  </div></div>`;
+
+  // Feedbacks
+  html += `<div class="panel"><div class="panel-label">Eindruck in Worten (${feedbacks.length})</div>`;
+  if (feedbacks.length) {
+    html += '<div class="quotes-list">' + feedbacks.map(r =>
+      `<div class="quote">${esc(r[l+'_feedback'])}<div class="quote-meta">Alter ${r.age||'–'} · ${r.gender==='m'?'Männlich':r.gender==='w'?'Weiblich':r.gender==='d'?'Divers':'–'}</div></div>`
+    ).join('') + '</div>';
+  } else {
+    html += '<div class="no-data">Noch keine Texte eingegeben.</div>';
+  }
+  html += '</div></div>';
+
+  document.getElementById('dashBody').innerHTML = html;
+}
+
+// ── Load Data ─────────────────────────────────────────────────────────────────
+async function loadData() {
+  document.getElementById('dashBody').innerHTML = '<div class="loading">Daten werden geladen …</div>';
+  const { data, error } = await sb.from('survey_responses').select('*').order('created_at', { ascending: false });
+  if (error) {
+    document.getElementById('dashBody').innerHTML = '<div class="loading">Fehler: ' + error.message + '</div>';
+    return;
+  }
+  allRows = data || [];
+  document.getElementById('lastUpdated').textContent = 'Zuletzt: ' + new Date().toLocaleTimeString('de-DE');
+  updateSliderFill();
+  render();
+}
+
+loadData();
 </script>
 </body>
 </html>

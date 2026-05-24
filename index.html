@@ -2,115 +2,369 @@
 <html lang="de">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>SOON — Fragrance Survey</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
   :root {
-    --bg: #E6E4E0;
-    --surface: #F0EEE9;
-    --text: #1A1A1A;
-    --text-muted: #6B6B6B;
-    --accent: #E10600;
-    --border: #D0CEC9;
-    --white: #FFFFFF;
+    --bg: #E6E4E0; --surface: #F0EEE9; --text: #1A1A1A;
+    --text-muted: #6B6B6B; --accent: #E10600; --border: #D0CEC9; --white: #FFFFFF;
+    --border-hover: #A0A09A; --error-border: #F5A0A0; --handle: #C0BDB8; --surface-active: #E8E6E1;
+    --safe-bottom: env(safe-area-inset-bottom, 0px);
+    --nav-h: 72px;
+    --font: 'Inter', -apple-system, BlinkMacSystemFont, 'Helvetica Neue', Arial, sans-serif;
   }
-  * { margin: 0; padding: 0; box-sizing: border-box; }
-  body { background: var(--bg); color: var(--text); font-family: 'Georgia', serif; min-height: 100vh; }
 
-  .progress-bar { position: fixed; top: 0; left: 0; height: 2px; background: var(--accent); transition: width 0.4s ease; z-index: 100; }
+  * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  body { background: var(--bg); color: var(--text); font-family: var(--font); min-height: 100vh; overflow-x: hidden; }
+  .sans { font-family: var(--font); }
 
-  .survey-header { padding: 48px 24px 32px; text-align: center; border-bottom: 1px solid var(--border); }
-  .brand-mark { font-family: 'Helvetica Neue', sans-serif; font-size: 11px; letter-spacing: 0.3em; text-transform: uppercase; color: var(--text-muted); margin-bottom: 12px; }
-  .survey-title { font-size: clamp(22px, 4vw, 32px); font-weight: 400; letter-spacing: -0.02em; margin-bottom: 12px; }
-  .survey-subtitle { font-size: 14px; color: var(--text-muted); font-family: 'Helvetica Neue', sans-serif; line-height: 1.6; max-width: 480px; margin: 0 auto; }
+  /* ── Hide number input spinners ── */
+  input[type=number]::-webkit-inner-spin-button,
+  input[type=number]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
+  input[type=number] { -moz-appearance: textfield; }
 
-  .survey-container { max-width: 680px; margin: 0 auto; padding: 0 24px 100px; }
+  /* ── Progress ── */
+  .progress-bar { position: fixed; top: 0; left: 0; height: 3px; background: var(--accent); transition: width 0.4s ease; z-index: 100; }
 
-  .section { display: none; animation: fadeIn 0.4s ease; }
+  /* ── Header ── */
+  .survey-header { padding: 32px 20px 24px; text-align: center; border-bottom: 1px solid var(--border); transition: padding 0.3s ease; }
+  .brand-mark { font-family: var(--font); font-size: 10px; letter-spacing: 0.3em; text-transform: uppercase; color: var(--text-muted); margin-bottom: 10px; }
+  .survey-title { font-size: clamp(20px, 6vw, 32px); font-weight: 300; letter-spacing: -0.02em; margin-bottom: 10px; transition: opacity 0.2s, max-height 0.3s; }
+  .survey-subtitle { font-size: 13px; color: var(--text-muted); font-family: var(--font); line-height: 1.6; max-width: 400px; margin: 0 auto; transition: opacity 0.2s, max-height 0.3s; }
+  /* Kompakt ab Sektion 2 — nur Brand-Mark bleibt */
+  .survey-header.compact { padding: 12px 20px 11px; }
+  .survey-header.compact .brand-mark { margin-bottom: 0; }
+  .survey-header.compact .survey-title,
+  .survey-header.compact .survey-subtitle { display: none; }
+
+  /* ── Container ── */
+  .survey-container { max-width: 640px; margin: 0 auto; padding: 0 16px calc(var(--nav-h) + var(--safe-bottom) + 24px); }
+
+  /* ── Sections ── */
+  .section { display: none; animation: fadeIn 0.35s ease; }
   .section.active { display: block; }
-  @keyframes fadeIn { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
 
-  .section-label { font-size: 10px; letter-spacing: 0.35em; text-transform: uppercase; color: var(--accent); font-family: 'Helvetica Neue', sans-serif; margin-bottom: 8px; margin-top: 48px; }
-  .section-heading { font-size: clamp(18px, 3vw, 24px); font-weight: 400; letter-spacing: -0.01em; margin-bottom: 8px; }
-  .section-desc { font-size: 13px; color: var(--text-muted); font-family: 'Helvetica Neue', sans-serif; line-height: 1.6; margin-bottom: 32px; }
+  .section-label { font-size: 10px; letter-spacing: 0.35em; text-transform: uppercase; color: var(--text-muted); font-family: var(--font); margin-bottom: 6px; margin-top: 36px; }
+  .section-heading { font-size: clamp(20px, 5vw, 26px); font-weight: 300; letter-spacing: -0.02em; margin-bottom: 6px; }
+  .section-desc { font-size: 13px; color: var(--text-muted); font-family: var(--font); line-height: 1.6; margin-bottom: 28px; }
 
-  .question { margin-bottom: 32px; }
-  .question-label { font-size: 13px; font-family: 'Helvetica Neue', sans-serif; font-weight: 500; color: var(--text); margin-bottom: 12px; display: block; }
-  .question-hint { font-size: 12px; color: var(--text-muted); font-family: 'Helvetica Neue', sans-serif; margin-bottom: 12px; display: block; }
+  /* ── Questions ── */
+  .question { margin-bottom: 28px; }
+  .question-label { font-size: 14px; font-family: var(--font); font-weight: 500; color: var(--text); margin-bottom: 12px; display: block; line-height: 1.4; }
+  .question-hint { font-size: 12px; color: var(--text-muted); font-family: var(--font); margin-bottom: 10px; display: block; }
 
+  /* ── Options (radio-style) ── */
+  /* Mobile: always stacked — better touch targets */
   .options { display: flex; flex-direction: column; gap: 8px; }
-  .options.horizontal { flex-direction: row; flex-wrap: wrap; gap: 10px; }
-  .option-item { display: flex; align-items: center; gap: 12px; padding: 14px 18px; background: var(--white); border: 1px solid var(--border); border-radius: 2px; cursor: pointer; transition: all 0.2s; font-family: 'Helvetica Neue', sans-serif; font-size: 14px; user-select: none; }
-  .option-item:hover { border-color: var(--text); }
+  .option-item {
+    display: flex; align-items: center; gap: 12px;
+    padding: 16px 18px; min-height: 56px;
+    background: var(--white); border: 1px solid var(--border); border-radius: 4px;
+    cursor: pointer; touch-action: manipulation;
+    font-family: var(--font); font-size: 15px;
+    user-select: none; transition: background 0.15s, border-color 0.15s, color 0.15s;
+  }
+  .option-item:hover { border-color: var(--border-hover); }
+  .option-item:active { background: var(--surface); }
   .option-item.selected { border-color: var(--text); background: var(--text); color: var(--white); }
+  .option-item.selected:hover { border-color: var(--text); }
   .option-item input { display: none; }
 
+  /* On wider screens allow horizontal wrap for short options */
+  @media (min-width: 480px) {
+    .options.horizontal { flex-direction: row; flex-wrap: wrap; }
+    .options.horizontal .option-item { flex: 1 0 auto; min-width: 100px; }
+  }
+
+  /* ── Tags ── */
   .tag-options { display: flex; flex-wrap: wrap; gap: 8px; }
-  .tag { padding: 8px 16px; border: 1px solid var(--border); border-radius: 100px; font-size: 13px; font-family: 'Helvetica Neue', sans-serif; cursor: pointer; transition: all 0.2s; background: var(--white); user-select: none; }
-  .tag:hover { border-color: var(--text); }
+  .tag {
+    padding: 10px 16px; min-height: 42px;
+    border: 1px solid var(--border); border-radius: 100px;
+    font-size: 14px; font-family: var(--font);
+    cursor: pointer; touch-action: manipulation;
+    background: var(--white); user-select: none;
+    display: flex; align-items: center;
+    transition: background 0.15s, border-color 0.15s, color 0.15s;
+  }
+  .tag:hover { border-color: var(--border-hover); }
+  .tag:active { background: var(--surface); }
   .tag.selected { background: var(--text); color: var(--white); border-color: var(--text); }
+  .tag.selected:hover { border-color: var(--text); }
 
+  /* ── Scale ── */
   .scale-options { display: flex; gap: 8px; align-items: center; }
-  .scale-label { font-size: 11px; color: var(--text-muted); font-family: 'Helvetica Neue', sans-serif; white-space: nowrap; }
+  .scale-label { font-size: 11px; color: var(--text-muted); font-family: var(--font); white-space: nowrap; flex-shrink: 0; }
   .scale-buttons { display: flex; gap: 6px; flex: 1; }
-  .scale-btn { flex: 1; aspect-ratio: 1; max-width: 48px; border: 1px solid var(--border); background: var(--white); border-radius: 2px; font-size: 13px; font-family: 'Helvetica Neue', sans-serif; cursor: pointer; transition: all 0.2s; }
-  .scale-btn:hover { border-color: var(--text); }
+  .scale-btn {
+    flex: 1; height: 52px; max-width: 56px;
+    border: 1px solid var(--border); background: var(--white); border-radius: 4px;
+    font-size: 15px; font-family: var(--font);
+    cursor: pointer; touch-action: manipulation;
+    transition: background 0.15s, border-color 0.15s, color 0.15s;
+  }
+  .scale-btn:hover { border-color: var(--border-hover); }
+  .scale-btn:active { background: var(--surface); }
   .scale-btn.selected { background: var(--text); color: var(--white); border-color: var(--text); }
+  .scale-btn.selected:hover { border-color: var(--text); }
 
-  .text-input { width: 100%; padding: 14px 18px; background: var(--white); border: 1px solid var(--border); border-radius: 2px; font-size: 14px; font-family: 'Helvetica Neue', sans-serif; color: var(--text); outline: none; transition: border-color 0.2s; resize: none; }
+  /* ── Text inputs ── */
+  /* font-size ≥ 16px prevents iOS from zooming on focus */
+  .text-input {
+    width: 100%; padding: 16px 18px;
+    background: var(--white); border: 1px solid var(--border); border-radius: 4px;
+    font-size: 16px; font-family: var(--font);
+    color: var(--text); outline: none;
+    transition: border-color 0.2s; resize: none;
+    -webkit-appearance: none;
+  }
   .text-input:focus { border-color: var(--text); }
-  .price-input-wrap { position: relative; display: inline-flex; align-items: center; }
-  .price-symbol { position: absolute; left: 18px; font-size: 14px; font-family: 'Helvetica Neue', sans-serif; color: var(--text-muted); }
-  .price-input { padding-left: 34px; width: 160px; }
+  .price-input-wrap { position: relative; display: inline-flex; align-items: center; width: 100%; max-width: 200px; }
+  .price-symbol { position: absolute; left: 18px; font-size: 16px; font-family: var(--font); color: var(--text-muted); }
+  .price-input { padding-left: 34px; }
 
-  .scent-card { background: var(--white); border: 1px solid var(--border); border-radius: 2px; padding: 24px; margin-bottom: 12px; }
-  .scent-card-header { display: flex; align-items: center; gap: 16px; margin-bottom: 24px; padding-bottom: 16px; border-bottom: 1px solid var(--border); }
-  .scent-letter { width: 40px; height: 40px; background: var(--text); color: var(--white); display: flex; align-items: center; justify-content: center; font-size: 16px; font-family: 'Georgia', serif; flex-shrink: 0; }
-  .scent-card-title { font-size: 16px; font-weight: 400; letter-spacing: 0.05em; }
-  .scent-card-note { font-size: 12px; color: var(--text-muted); font-family: 'Helvetica Neue', sans-serif; margin-top: 2px; }
+  /* ── Scent identity header ── */
+  .scent-identity { display: flex; align-items: center; gap: 16px; margin-bottom: 20px; }
+  .scent-letter { width: 48px; height: 48px; background: var(--text); color: var(--white); display: flex; align-items: center; justify-content: center; font-size: 20px; font-family: var(--font); font-weight: 300; letter-spacing: 0.05em; flex-shrink: 0; border-radius: 2px; }
+  .scent-identity-text .section-label { margin-top: 0; }
+  .scent-note { font-size: 11px; color: var(--text-muted); font-family: var(--font); margin-top: 2px; letter-spacing: 0.05em; }
 
-  .divider { height: 1px; background: var(--border); margin: 40px 0; }
+  /* ── Question groups ── */
+  .q-group { background: var(--white); border: 1px solid var(--border); border-radius: 4px; padding: 16px; margin-bottom: 8px; }
+  .q-group-label {
+    font-size: 11px; letter-spacing: 0.3em; text-transform: uppercase;
+    color: var(--text-muted); font-family: var(--font);
+    margin-bottom: 18px; padding-bottom: 12px; border-bottom: 1px solid var(--border);
+  }
+  .q-group .question:last-child { margin-bottom: 0; }
+  .q-group .question { margin-bottom: 22px; }
 
-  .naming-card { background: var(--white); border: 1px solid var(--border); border-radius: 2px; padding: 24px; margin-bottom: 16px; }
-  .naming-card-label { font-size: 10px; letter-spacing: 0.3em; text-transform: uppercase; color: var(--text-muted); font-family: 'Helvetica Neue', sans-serif; margin-bottom: 16px; }
+  /* 2-column grid for short options (Jahreszeit, Geschlecht) */
+  .options.grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .options.grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; }
+
+  /* Compact option height for grouped context */
+  .q-group .option-item { min-height: 48px; padding: 12px 16px; font-size: 14px; }
+
+  /* Scale inside group: labels below */
+  .scale-wrap { display: flex; flex-direction: column; gap: 6px; }
+  .scale-ends { display: flex; justify-content: space-between; font-size: 11px; color: var(--text-muted); font-family: var(--font); padding: 0 2px; }
+  .q-group .scale-buttons { display: flex; gap: 6px; }
+  .q-group .scale-btn { flex: 1; height: 48px; max-width: none; }
+
+  /* ── Ranking — Drag & Drop ── */
+  .rank-list { display: flex; flex-direction: column; gap: 8px; }
+  .rank-item {
+    display: flex; align-items: center; gap: 14px;
+    padding: 18px 16px; min-height: 72px;
+    background: var(--white); border: 1px solid var(--border); border-radius: 4px;
+    cursor: grab; user-select: none; touch-action: none;
+    transition: box-shadow 0.15s, opacity 0.15s;
+  }
+  .rank-item:active { cursor: grabbing; }
+  .rank-item.dragging { opacity: 0.3; box-shadow: none; border-style: dashed; }
+  .rank-item.over-top { border-top: 3px solid var(--text); }
+  .rank-item.over-bottom { border-bottom: 3px solid var(--text); }
+  .rank-pos { font-family: var(--font); font-weight: 300; font-size: 20px; color: var(--text-muted); width: 22px; text-align: center; flex-shrink: 0; }
+  .rank-item-label { flex: 1; font-size: 15px; font-family: var(--font); }
+  .drag-handle { color: var(--handle); flex-shrink: 0; padding: 8px; margin: -8px; display: flex; align-items: center; }
+  .rank-hint { font-size: 11px; color: var(--text-muted); font-family: var(--font); text-align: center; margin-top: 14px; letter-spacing: 0.05em; }
+
+  /* ── Image option cards (compact) ── */
+  .img-options { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .img-option {
+    position: relative; border-radius: 4px; overflow: hidden;
+    cursor: pointer; touch-action: manipulation; user-select: none;
+    height: 110px; border: 2.5px solid transparent;
+    background: var(--surface);
+    transition: border-color 0.18s, transform 0.12s, box-shadow 0.18s;
+  }
+  .img-option:hover { border-color: var(--border-hover); }
+  .img-option:active { transform: scale(0.97); }
+  .img-option img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .img-option-overlay {
+    position: absolute; bottom: 0; left: 0; right: 0;
+    padding: 24px 8px 8px;
+    background: linear-gradient(transparent, rgba(0,0,0,0.65));
+  }
+  .img-option-name { color: var(--white); font-size: 13px; font-family: var(--font); font-weight: 500; letter-spacing: 0.05em; display: block; }
+  .img-option-sub  { color: rgba(255,255,255,0.65); font-size: 10px; font-family: var(--font); margin-top: 1px; display: block; }
+  .img-option.selected { border-color: var(--text); box-shadow: 0 0 0 1px var(--text); }
+  .img-option.selected::after {
+    content: '✓'; position: absolute; top: 7px; right: 7px;
+    width: 22px; height: 22px; background: var(--text); color: #fff;
+    border-radius: 50%; display: flex; align-items: center; justify-content: center;
+    font-size: 11px; font-family: var(--font);
+  }
+
+  /* ── Optional hint & Validation ── */
+  .optional-badge {
+    font-size: 11px; font-family: var(--font);
+    font-weight: 400; font-style: italic;
+    color: var(--text-muted); margin-left: 5px;
+  }
+  /* Required field highlight on error */
+  .q-required-error .question-label { color: var(--accent); }
+  .q-required-error .options .option-item,
+  .q-required-error .scale-buttons .scale-btn,
+  .q-required-error .price-input { border-color: var(--error-border) !important; }
+  .q-required-error .scale-buttons { outline: 1.5px solid var(--error-border); outline-offset: 2px; border-radius: 4px; }
+  .q-required-error .naming-options .naming-option { border-color: var(--error-border) !important; }
+  @keyframes shake { 0%,100%{transform:translateX(0)} 20%,60%{transform:translateX(-5px)} 40%,80%{transform:translateX(5px)} }
+  .q-required-error { animation: shake 0.35s ease; }
+
+  /* Validation toast */
+  .val-toast {
+    position: fixed; bottom: calc(var(--nav-h) + var(--safe-bottom) + 10px); left: 50%;
+    transform: translateX(-50%) translateY(0);
+    background: var(--accent); color: var(--white);
+    font-family: var(--font); font-size: 13px;
+    padding: 10px 20px; border-radius: 100px; white-space: nowrap;
+    z-index: 200; opacity: 0; transition: opacity 0.2s;
+    pointer-events: none;
+  }
+  .val-toast.show { opacity: 1; }
+
+  /* ── Naming ── */
+  .naming-card { background: var(--white); border: 1px solid var(--border); border-radius: 4px; padding: 20px 16px; margin-bottom: 16px; }
+  .naming-card-label { font-size: 10px; letter-spacing: 0.3em; text-transform: uppercase; color: var(--text-muted); font-family: var(--font); margin-bottom: 14px; }
   .naming-options { display: flex; flex-direction: column; gap: 8px; }
-  .naming-option { padding: 16px 20px; border: 1px solid var(--border); border-radius: 2px; cursor: pointer; transition: all 0.2s; font-size: 15px; font-family: 'Georgia', serif; background: var(--surface); user-select: none; }
-  .naming-option:hover { border-color: var(--text); }
+  .naming-option {
+    padding: 18px 18px; min-height: 64px;
+    border: 1px solid var(--border); border-radius: 4px;
+    cursor: pointer; touch-action: manipulation;
+    font-size: 16px; font-family: var(--font); font-weight: 400;
+    background: var(--surface); user-select: none;
+    display: flex; flex-direction: column; justify-content: center;
+    transition: background 0.15s, border-color 0.15s, color 0.15s;
+  }
+  .naming-option:hover { border-color: var(--border-hover); }
+  .naming-option:active { background: var(--surface-active); }
   .naming-option.selected { border-color: var(--text); background: var(--text); color: var(--white); }
-  .naming-option .principle { display: block; font-size: 10px; letter-spacing: 0.25em; text-transform: uppercase; font-family: 'Helvetica Neue', sans-serif; color: var(--text-muted); margin-top: 4px; }
+  .naming-option .principle { font-size: 10px; letter-spacing: 0.25em; text-transform: uppercase; font-family: var(--font); color: var(--text-muted); margin-top: 4px; }
   .naming-option.selected .principle { color: rgba(255,255,255,0.5); }
 
-  .rank-options { display: flex; flex-direction: column; gap: 8px; }
-  .rank-option { display: flex; align-items: center; gap: 16px; padding: 16px 20px; background: var(--white); border: 1px solid var(--border); border-radius: 2px; cursor: pointer; transition: all 0.2s; font-family: 'Helvetica Neue', sans-serif; font-size: 14px; user-select: none; }
-  .rank-option:hover { border-color: var(--text); }
-  .rank-option.selected { border-color: var(--text); background: var(--text); color: var(--white); }
-  .rank-badge { width: 28px; height: 28px; border: 1px solid var(--border); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 12px; flex-shrink: 0; }
-  .rank-option.selected .rank-badge { border-color: rgba(255,255,255,0.3); }
+  /* ── Focus states (keyboard / a11y) ── */
+  .btn:focus-visible,
+  .option-item:focus-visible,
+  .tag:focus-visible,
+  .scale-btn:focus-visible,
+  .img-option:focus-visible,
+  .naming-option:focus-visible,
+  .rank-item:focus-visible { outline: 2px solid var(--text); outline-offset: 2px; }
+  .text-input:focus-visible { border-color: var(--text); outline: none; }
 
-  .nav-wrap { position: fixed; bottom: 0; left: 0; right: 0; background: var(--bg); border-top: 1px solid var(--border); padding: 16px 24px; display: flex; justify-content: space-between; align-items: center; z-index: 50; }
-  .nav-counter { font-size: 12px; color: var(--text-muted); font-family: 'Helvetica Neue', sans-serif; letter-spacing: 0.1em; }
+  /* ── Disabled button state ── */
+  .btn:disabled { opacity: 0.45; cursor: not-allowed; }
+
+  /* ── Navigation ── */
+  .nav-wrap {
+    position: fixed; bottom: 0; left: 0; right: 0;
+    background: var(--bg); border-top: 1px solid var(--border);
+    padding: 10px 20px;
+    padding-bottom: calc(10px + var(--safe-bottom));
+    display: flex; flex-direction: column; align-items: stretch; gap: 8px;
+    z-index: 50;
+  }
+  .nav-counter {
+    font-size: 11px; color: var(--text-muted);
+    font-family: var(--font);
+    letter-spacing: 0.15em; text-align: center;
+  }
   .btn-group { display: flex; gap: 10px; align-items: center; }
-  .btn { padding: 12px 28px; font-size: 12px; letter-spacing: 0.15em; text-transform: uppercase; font-family: 'Helvetica Neue', sans-serif; border-radius: 2px; cursor: pointer; transition: all 0.2s; border: 1px solid transparent; }
-  .btn-back { background: transparent; border-color: var(--border); color: var(--text); }
-  .btn-back:hover { border-color: var(--text); }
-  .btn-next { background: var(--text); color: var(--white); }
-  .btn-next:hover { background: #333; }
-  .btn-submit { background: var(--accent); color: var(--white); border-color: var(--accent); }
-  .saving-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--accent); animation: pulse 1s infinite; }
+  .btn {
+    padding: 15px 24px; min-height: 52px;
+    font-size: 12px; letter-spacing: 0.15em; text-transform: uppercase;
+    font-family: var(--font); border-radius: 4px;
+    cursor: pointer; touch-action: manipulation;
+    transition: background 0.15s, border-color 0.15s;
+    border: 1px solid transparent;
+  }
+  .btn-back {
+    background: transparent; border-color: var(--border); color: var(--text);
+    flex-shrink: 0; min-width: 88px;
+  }
+  .btn-next { background: var(--text); color: var(--white); flex: 1; }
+  .btn-submit { background: var(--accent); color: var(--white); border-color: var(--accent); flex: 1; }
+  .saving-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--accent); animation: pulse 1s infinite; flex-shrink: 0; }
   @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.3; } }
 
-  .thankyou { display: none; text-align: center; padding: 80px 24px; }
+  /* ── Dev Badge ── */
+  .dev-badge {
+    position: fixed; top: 10px; right: 12px; z-index: 999;
+    background: #FF6B00; color: #fff;
+    font-family: var(--font);
+    font-size: 10px; font-weight: 600; letter-spacing: 0.15em; text-transform: uppercase;
+    padding: 4px 9px; border-radius: 2px;
+    pointer-events: none; user-select: none;
+  }
+
+  /* ── Intro Screen ── */
+  .intro-content { padding: 48px 0 32px; }
+  .intro-eyebrow {
+    font-size: 10px; letter-spacing: 0.35em; text-transform: uppercase;
+    color: var(--text-muted); font-family: var(--font);
+    margin-bottom: 20px;
+  }
+  .intro-heading {
+    font-family: var(--font); font-size: clamp(24px, 6vw, 32px);
+    font-weight: 300; line-height: 1.2; letter-spacing: -0.02em;
+    margin-bottom: 20px;
+  }
+  .intro-body {
+    font-size: 14px; line-height: 1.8; color: var(--text-muted);
+    font-family: var(--font);
+    margin-bottom: 36px;
+  }
+  .intro-meta { display: flex; flex-direction: column; gap: 12px; margin-bottom: 8px; }
+  .intro-meta-item {
+    display: flex; align-items: center; gap: 10px;
+    font-size: 13px; color: var(--text-muted);
+    font-family: var(--font);
+  }
+  .intro-meta-item svg { width: 16px; height: 16px; fill: none; stroke: var(--text-muted); stroke-width: 1.5; flex-shrink: 0; }
+
+  /* ── Thank you ── */
+  .thankyou { display: none; text-align: center; padding: 72px 24px 100px; }
   .thankyou.active { display: block; }
-  .thankyou-mark { width: 48px; height: 48px; background: var(--text); margin: 0 auto 24px; display: flex; align-items: center; justify-content: center; }
-  .thankyou-mark svg { width: 20px; height: 20px; fill: none; stroke: white; stroke-width: 2; }
-  .thankyou h2 { font-size: 28px; font-weight: 400; margin-bottom: 12px; }
-  .thankyou p { font-size: 14px; color: var(--text-muted); font-family: 'Helvetica Neue', sans-serif; line-height: 1.7; }
+  .thankyou-mark { width: 48px; height: 48px; background: var(--text); margin: 0 auto 24px; display: flex; align-items: center; justify-content: center; border-radius: 2px; }
+  .thankyou-mark svg { width: 22px; height: 22px; fill: none; stroke: white; stroke-width: 2; }
+  .thankyou h2 { font-size: 32px; font-weight: 300; letter-spacing: -0.02em; margin-bottom: 12px; }
+  .thankyou > p { font-size: 14px; color: var(--text-muted); font-family: var(--font); line-height: 1.8; }
+
+  /* Email capture */
+  .email-capture { margin-top: 48px; text-align: left; }
+  .email-divider { height: 1px; background: var(--border); margin-bottom: 32px; }
+  .email-teaser {
+    font-family: var(--font); font-size: 20px; font-weight: 300; letter-spacing: -0.01em;
+    margin-bottom: 10px; color: var(--text);
+  }
+  .email-desc {
+    font-size: 13px; line-height: 1.7; color: var(--text-muted);
+    font-family: var(--font);
+    margin-bottom: 20px;
+  }
+  .email-row { display: flex; flex-direction: column; gap: 10px; }
+  .email-row .text-input { width: 100%; margin-bottom: 0; }
+  .email-row .btn { width: 100%; padding: 15px 18px; font-size: 12px; }
+  .email-confirmed {
+    margin-top: 20px; padding: 14px 18px;
+    background: var(--surface); border-radius: 2px;
+    font-size: 13px; color: var(--text-muted); text-align: center;
+    font-family: var(--font);
+    letter-spacing: 0.05em;
+  }
 </style>
 </head>
 <body>
 
 <div class="progress-bar" id="progressBar" style="width:0%"></div>
+<div class="dev-badge" id="devBadge" style="display:none">DEV</div>
 
 <div class="survey-header">
   <div class="brand-mark">Soon — Fragrance Lab</div>
@@ -120,298 +374,112 @@
 
 <div class="survey-container">
 
-  <!-- SECTION 1: PERSON -->
-  <div class="section active" id="section-1">
+  <!-- SECTION 0: INTRO -->
+  <div class="section active" id="section-0">
+    <div class="intro-content">
+      <div class="intro-eyebrow">Blind-Test · 4 Düfte</div>
+      <h2 class="intro-heading">Willkommen zur<br>SOON Duft&#8209;Umfrage.</h2>
+      <p class="intro-body">
+        Dein ehrliches Feedback hilft uns zu verstehen, wie die Düfte wahrgenommen werden und ob noch Anpassungen nötig sind.
+      </p>
+      <div class="intro-meta">
+        <div class="intro-meta-item">
+          <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"></circle><polyline points="12 7 12 12 15 15"></polyline></svg>
+          Ca. 5–10 Minuten
+        </div>
+        <div class="intro-meta-item">
+          <svg viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+          Anonym &amp; vertraulich
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SECTION 1: ÜBER DICH -->
+  <div class="section" id="section-1">
     <div class="section-label">01 — Über dich</div>
     <h2 class="section-heading">Kurz zu deiner Person.</h2>
     <p class="section-desc">Anonym. Nur zur Auswertung.</p>
+
     <div class="question">
       <span class="question-label">Geschlecht</span>
-      <div class="options horizontal" data-name="gender" data-type="radio">
+      <div class="options" data-name="gender">
         <label class="option-item"><input type="radio" name="gender" value="m"> Männlich</label>
         <label class="option-item"><input type="radio" name="gender" value="w"> Weiblich</label>
         <label class="option-item"><input type="radio" name="gender" value="d"> Divers</label>
       </div>
     </div>
+
     <div class="question">
-      <span class="question-label">Altersgruppe</span>
-      <div class="options" data-name="age_range" data-type="radio">
-        <label class="option-item"><input type="radio" name="age_range" value="16-20"> 16 – 20</label>
-        <label class="option-item"><input type="radio" name="age_range" value="21-25"> 21 – 25</label>
-        <label class="option-item"><input type="radio" name="age_range" value="26-32"> 26 – 32</label>
-        <label class="option-item"><input type="radio" name="age_range" value="33+"> 33+</label>
-      </div>
+      <span class="question-label">Alter</span>
+      <input type="number" inputmode="numeric" class="text-input" id="age"
+             placeholder="z.B. 24" min="10" max="120" style="max-width:180px;">
+    </div>
+
+    <div class="question">
+      <span class="question-label">Wie viele Düfte hast du gerade zu Hause?</span>
+      <input type="number" inputmode="numeric" class="text-input" id="fragrance_count"
+             placeholder="z.B. 5" min="0" style="max-width:180px;">
     </div>
   </div>
 
-  <!-- SECTION 2: DUFT A -->
-  <div class="section" id="section-2">
-    <div class="section-label">02 — Duft A</div>
-    <h2 class="section-heading">Erster Eindruck.</h2>
-    <p class="section-desc">Rieche. Warte 30 Sekunden. Antworte spontan.</p>
-    <div class="scent-card">
-      <div class="scent-card-header">
-        <div class="scent-letter">A</div>
-        <div><div class="scent-card-title">Duft A</div><div class="scent-card-note">Blindtest — kein Produktname</div></div>
-      </div>
-      <div class="question">
-        <span class="question-label">Welche Adjektive beschreiben diesen Duft? <em style="font-weight:400;color:var(--text-muted)">(mehrere möglich)</em></span>
-        <div class="tag-options" data-name="a_adj" data-type="multi">
-          <span class="tag" data-value="frisch">Frisch</span><span class="tag" data-value="warm">Warm</span><span class="tag" data-value="holzig">Holzig</span><span class="tag" data-value="cremig">Cremig</span><span class="tag" data-value="kühl">Kühl</span><span class="tag" data-value="intensiv">Intensiv</span><span class="tag" data-value="dezent">Dezent</span><span class="tag" data-value="maskulin">Maskulin</span><span class="tag" data-value="feminin">Feminin</span><span class="tag" data-value="neutral">Neutral</span><span class="tag" data-value="sportlich">Sportlich</span><span class="tag" data-value="elegant">Elegant</span><span class="tag" data-value="erdig">Erdig</span><span class="tag" data-value="süßlich">Süßlich</span>
-        </div>
-      </div>
-      <div class="question">
-        <span class="question-label">Wann würdest du diesen Duft tragen?</span>
-        <div class="options" data-name="a_occasion" data-type="radio">
-          <label class="option-item"><input type="radio" name="a_occasion" value="morgens"> Morgens / Daily Routine</label>
-          <label class="option-item"><input type="radio" name="a_occasion" value="sport"> Nach dem Sport</label>
-          <label class="option-item"><input type="radio" name="a_occasion" value="abends"> Abends / Ausgehen</label>
-          <label class="option-item"><input type="radio" name="a_occasion" value="work"> Arbeit / Alltag</label>
-          <label class="option-item"><input type="radio" name="a_occasion" value="nie"> Würde ich nicht tragen</label>
-        </div>
-      </div>
-      <div class="question">
-        <span class="question-label">Dieser Duft wirkt eher …</span>
-        <div class="options horizontal" data-name="a_gender_perception" data-type="radio">
-          <label class="option-item"><input type="radio" name="a_gender_perception" value="maskulin"> Maskulin</label>
-          <label class="option-item"><input type="radio" name="a_gender_perception" value="feminin"> Feminin</label>
-          <label class="option-item"><input type="radio" name="a_gender_perception" value="unisex"> Unisex</label>
-        </div>
-      </div>
-      <div class="question">
-        <span class="question-label">Intensität</span>
-        <div class="scale-options">
-          <span class="scale-label">Sehr dezent</span>
-          <div class="scale-buttons" data-name="a_intensity" data-type="scale">
-            <button class="scale-btn" data-value="1">1</button><button class="scale-btn" data-value="2">2</button><button class="scale-btn" data-value="3">3</button><button class="scale-btn" data-value="4">4</button><button class="scale-btn" data-value="5">5</button>
-          </div>
-          <span class="scale-label">Sehr intensiv</span>
-        </div>
-      </div>
-    </div>
-  </div>
+  <!-- SECTIONS 2–5: DÜFTE (dynamisch + randomisiert) -->
+  <div id="scent-sections-container"></div>
 
-  <!-- SECTION 3: DUFT B -->
-  <div class="section" id="section-3">
-    <div class="section-label">03 — Duft B</div>
-    <h2 class="section-heading">Zweiter Eindruck.</h2>
-    <p class="section-desc">Rieche. Warte 30 Sekunden. Antworte spontan.</p>
-    <div class="scent-card">
-      <div class="scent-card-header">
-        <div class="scent-letter">B</div>
-        <div><div class="scent-card-title">Duft B</div><div class="scent-card-note">Blindtest — kein Produktname</div></div>
-      </div>
-      <div class="question">
-        <span class="question-label">Welche Adjektive beschreiben diesen Duft? <em style="font-weight:400;color:var(--text-muted)">(mehrere möglich)</em></span>
-        <div class="tag-options" data-name="b_adj" data-type="multi">
-          <span class="tag" data-value="frisch">Frisch</span><span class="tag" data-value="warm">Warm</span><span class="tag" data-value="holzig">Holzig</span><span class="tag" data-value="cremig">Cremig</span><span class="tag" data-value="kühl">Kühl</span><span class="tag" data-value="intensiv">Intensiv</span><span class="tag" data-value="dezent">Dezent</span><span class="tag" data-value="maskulin">Maskulin</span><span class="tag" data-value="feminin">Feminin</span><span class="tag" data-value="neutral">Neutral</span><span class="tag" data-value="sportlich">Sportlich</span><span class="tag" data-value="elegant">Elegant</span><span class="tag" data-value="erdig">Erdig</span><span class="tag" data-value="süßlich">Süßlich</span>
-        </div>
-      </div>
-      <div class="question">
-        <span class="question-label">Wann würdest du diesen Duft tragen?</span>
-        <div class="options" data-name="b_occasion" data-type="radio">
-          <label class="option-item"><input type="radio" name="b_occasion" value="morgens"> Morgens / Daily Routine</label>
-          <label class="option-item"><input type="radio" name="b_occasion" value="sport"> Nach dem Sport</label>
-          <label class="option-item"><input type="radio" name="b_occasion" value="abends"> Abends / Ausgehen</label>
-          <label class="option-item"><input type="radio" name="b_occasion" value="work"> Arbeit / Alltag</label>
-          <label class="option-item"><input type="radio" name="b_occasion" value="nie"> Würde ich nicht tragen</label>
-        </div>
-      </div>
-      <div class="question">
-        <span class="question-label">Dieser Duft wirkt eher …</span>
-        <div class="options horizontal" data-name="b_gender_perception" data-type="radio">
-          <label class="option-item"><input type="radio" name="b_gender_perception" value="maskulin"> Maskulin</label>
-          <label class="option-item"><input type="radio" name="b_gender_perception" value="feminin"> Feminin</label>
-          <label class="option-item"><input type="radio" name="b_gender_perception" value="unisex"> Unisex</label>
-        </div>
-      </div>
-      <div class="question">
-        <span class="question-label">Intensität</span>
-        <div class="scale-options">
-          <span class="scale-label">Sehr dezent</span>
-          <div class="scale-buttons" data-name="b_intensity" data-type="scale">
-            <button class="scale-btn" data-value="1">1</button><button class="scale-btn" data-value="2">2</button><button class="scale-btn" data-value="3">3</button><button class="scale-btn" data-value="4">4</button><button class="scale-btn" data-value="5">5</button>
-          </div>
-          <span class="scale-label">Sehr intensiv</span>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- SECTION 4: DUFT C -->
-  <div class="section" id="section-4">
-    <div class="section-label">04 — Duft C</div>
-    <h2 class="section-heading">Dritter Eindruck.</h2>
-    <p class="section-desc">Rieche. Warte 30 Sekunden. Antworte spontan.</p>
-    <div class="scent-card">
-      <div class="scent-card-header">
-        <div class="scent-letter">C</div>
-        <div><div class="scent-card-title">Duft C</div><div class="scent-card-note">Blindtest — kein Produktname</div></div>
-      </div>
-      <div class="question">
-        <span class="question-label">Welche Adjektive beschreiben diesen Duft? <em style="font-weight:400;color:var(--text-muted)">(mehrere möglich)</em></span>
-        <div class="tag-options" data-name="c_adj" data-type="multi">
-          <span class="tag" data-value="frisch">Frisch</span><span class="tag" data-value="warm">Warm</span><span class="tag" data-value="holzig">Holzig</span><span class="tag" data-value="cremig">Cremig</span><span class="tag" data-value="kühl">Kühl</span><span class="tag" data-value="intensiv">Intensiv</span><span class="tag" data-value="dezent">Dezent</span><span class="tag" data-value="maskulin">Maskulin</span><span class="tag" data-value="feminin">Feminin</span><span class="tag" data-value="neutral">Neutral</span><span class="tag" data-value="sportlich">Sportlich</span><span class="tag" data-value="elegant">Elegant</span><span class="tag" data-value="erdig">Erdig</span><span class="tag" data-value="süßlich">Süßlich</span>
-        </div>
-      </div>
-      <div class="question">
-        <span class="question-label">Wann würdest du diesen Duft tragen?</span>
-        <div class="options" data-name="c_occasion" data-type="radio">
-          <label class="option-item"><input type="radio" name="c_occasion" value="morgens"> Morgens / Daily Routine</label>
-          <label class="option-item"><input type="radio" name="c_occasion" value="sport"> Nach dem Sport</label>
-          <label class="option-item"><input type="radio" name="c_occasion" value="abends"> Abends / Ausgehen</label>
-          <label class="option-item"><input type="radio" name="c_occasion" value="work"> Arbeit / Alltag</label>
-          <label class="option-item"><input type="radio" name="c_occasion" value="nie"> Würde ich nicht tragen</label>
-        </div>
-      </div>
-      <div class="question">
-        <span class="question-label">Dieser Duft wirkt eher …</span>
-        <div class="options horizontal" data-name="c_gender_perception" data-type="radio">
-          <label class="option-item"><input type="radio" name="c_gender_perception" value="maskulin"> Maskulin</label>
-          <label class="option-item"><input type="radio" name="c_gender_perception" value="feminin"> Feminin</label>
-          <label class="option-item"><input type="radio" name="c_gender_perception" value="unisex"> Unisex</label>
-        </div>
-      </div>
-      <div class="question">
-        <span class="question-label">Intensität</span>
-        <div class="scale-options">
-          <span class="scale-label">Sehr dezent</span>
-          <div class="scale-buttons" data-name="c_intensity" data-type="scale">
-            <button class="scale-btn" data-value="1">1</button><button class="scale-btn" data-value="2">2</button><button class="scale-btn" data-value="3">3</button><button class="scale-btn" data-value="4">4</button><button class="scale-btn" data-value="5">5</button>
-          </div>
-          <span class="scale-label">Sehr intensiv</span>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- SECTION 5: DUFT D -->
-  <div class="section" id="section-5">
-    <div class="section-label">05 — Duft D</div>
-    <h2 class="section-heading">Vierter Eindruck.</h2>
-    <p class="section-desc">Rieche. Warte 30 Sekunden. Antworte spontan.</p>
-    <div class="scent-card">
-      <div class="scent-card-header">
-        <div class="scent-letter">D</div>
-        <div><div class="scent-card-title">Duft D</div><div class="scent-card-note">Blindtest — kein Produktname</div></div>
-      </div>
-      <div class="question">
-        <span class="question-label">Welche Adjektive beschreiben diesen Duft? <em style="font-weight:400;color:var(--text-muted)">(mehrere möglich)</em></span>
-        <div class="tag-options" data-name="d_adj" data-type="multi">
-          <span class="tag" data-value="frisch">Frisch</span><span class="tag" data-value="warm">Warm</span><span class="tag" data-value="holzig">Holzig</span><span class="tag" data-value="cremig">Cremig</span><span class="tag" data-value="kühl">Kühl</span><span class="tag" data-value="intensiv">Intensiv</span><span class="tag" data-value="dezent">Dezent</span><span class="tag" data-value="maskulin">Maskulin</span><span class="tag" data-value="feminin">Feminin</span><span class="tag" data-value="neutral">Neutral</span><span class="tag" data-value="sportlich">Sportlich</span><span class="tag" data-value="elegant">Elegant</span><span class="tag" data-value="erdig">Erdig</span><span class="tag" data-value="süßlich">Süßlich</span>
-        </div>
-      </div>
-      <div class="question">
-        <span class="question-label">Wann würdest du diesen Duft tragen?</span>
-        <div class="options" data-name="d_occasion" data-type="radio">
-          <label class="option-item"><input type="radio" name="d_occasion" value="morgens"> Morgens / Daily Routine</label>
-          <label class="option-item"><input type="radio" name="d_occasion" value="sport"> Nach dem Sport</label>
-          <label class="option-item"><input type="radio" name="d_occasion" value="abends"> Abends / Ausgehen</label>
-          <label class="option-item"><input type="radio" name="d_occasion" value="work"> Arbeit / Alltag</label>
-          <label class="option-item"><input type="radio" name="d_occasion" value="nie"> Würde ich nicht tragen</label>
-        </div>
-      </div>
-      <div class="question">
-        <span class="question-label">Dieser Duft wirkt eher …</span>
-        <div class="options horizontal" data-name="d_gender_perception" data-type="radio">
-          <label class="option-item"><input type="radio" name="d_gender_perception" value="maskulin"> Maskulin</label>
-          <label class="option-item"><input type="radio" name="d_gender_perception" value="feminin"> Feminin</label>
-          <label class="option-item"><input type="radio" name="d_gender_perception" value="unisex"> Unisex</label>
-        </div>
-      </div>
-      <div class="question">
-        <span class="question-label">Intensität</span>
-        <div class="scale-options">
-          <span class="scale-label">Sehr dezent</span>
-          <div class="scale-buttons" data-name="d_intensity" data-type="scale">
-            <button class="scale-btn" data-value="1">1</button><button class="scale-btn" data-value="2">2</button><button class="scale-btn" data-value="3">3</button><button class="scale-btn" data-value="4">4</button><button class="scale-btn" data-value="5">5</button>
-          </div>
-          <span class="scale-label">Sehr intensiv</span>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- SECTION 6: NAMENSTEST -->
+  <!-- SECTION 6: RANKING -->
   <div class="section" id="section-6">
-    <div class="section-label">06 — Naming</div>
+    <div class="section-label">06 — Ranking</div>
+    <h2 class="section-heading">Dein Favoriten-Ranking.</h2>
+    <p class="section-desc">Platz 1 oben ist dein Favorit — verschiebe die Düfte in deine Reihenfolge.</p>
+    <div id="ranking-container"></div>
+  </div>
+
+  <!-- SECTION 7: NAMING -->
+  <div class="section" id="section-7">
+    <div class="section-label">07 — Naming</div>
     <h2 class="section-heading">Welcher Name spricht dich an?</h2>
     <p class="section-desc">Kein Duft dahinter — nur der Name.</p>
     <div class="naming-card">
-      <div class="naming-card-label">Welcher Name gefällt dir am besten?</div>
-      <div class="naming-options" data-name="naming_winner" data-type="radio">
-        <div class="naming-option" data-value="mood">Bold Ease<span class="principle">Prinzip: Mood</span></div>
-        <div class="naming-option" data-value="mood_ingredient">Bold Cedar<span class="principle">Prinzip: Mood + Ingredient</span></div>
-        <div class="naming-option" data-value="ingredient">Clean Mango Dusk<span class="principle">Prinzip: Only Ingredient</span></div>
+      <div class="naming-card-label">Welcher klingt am besten?</div>
+      <div class="naming-options" data-name="naming_winner">
+        <div class="naming-option" data-value="mood">Bold Ease</div>
+        <div class="naming-option" data-value="mood_ingredient">Bold Cedar</div>
+        <div class="naming-option" data-value="ingredient">Clean Mango Dusk</div>
       </div>
     </div>
     <div class="question" style="margin-top:24px;">
-      <span class="question-label">Was stört dich an den anderen beiden Namen?</span>
-      <span class="question-hint">Optional.</span>
+      <span class="question-label">Was passt dir an den anderen nicht?<span class="optional-badge">Optional</span></span>
       <textarea class="text-input" rows="3" id="naming_feedback" placeholder="Spontaner Gedanke …"></textarea>
     </div>
   </div>
 
-  <!-- SECTION 7: KAUFBEREITSCHAFT -->
-  <div class="section" id="section-7">
-    <div class="section-label">07 — Preis</div>
-    <h2 class="section-heading">Was wärst du bereit zu zahlen?</h2>
-    <p class="section-desc">Offene Angabe — kein Anker.</p>
-    <div class="scent-card">
-      <div class="scent-card-header"><div class="scent-letter">A</div><div><div class="scent-card-title">Duft A</div></div></div>
-      <div class="question"><span class="question-label">Dein fairer Preis (50ml EDP)?</span>
-        <div class="price-input-wrap"><span class="price-symbol">€</span><input type="number" class="text-input price-input" id="price_a" placeholder="0" min="0" max="500"></div>
-      </div>
-    </div>
-    <div class="scent-card">
-      <div class="scent-card-header"><div class="scent-letter">B</div><div><div class="scent-card-title">Duft B</div></div></div>
-      <div class="question"><span class="question-label">Dein fairer Preis (50ml EDP)?</span>
-        <div class="price-input-wrap"><span class="price-symbol">€</span><input type="number" class="text-input price-input" id="price_b" placeholder="0" min="0" max="500"></div>
-      </div>
-    </div>
-    <div class="scent-card">
-      <div class="scent-card-header"><div class="scent-letter">C</div><div><div class="scent-card-title">Duft C</div></div></div>
-      <div class="question"><span class="question-label">Dein fairer Preis (50ml EDP)?</span>
-        <div class="price-input-wrap"><span class="price-symbol">€</span><input type="number" class="text-input price-input" id="price_c" placeholder="0" min="0" max="500"></div>
-      </div>
-    </div>
-    <div class="scent-card">
-      <div class="scent-card-header"><div class="scent-letter">D</div><div><div class="scent-card-title">Duft D</div></div></div>
-      <div class="question"><span class="question-label">Dein fairer Preis (50ml EDP)?</span>
-        <div class="price-input-wrap"><span class="price-symbol">€</span><input type="number" class="text-input price-input" id="price_d" placeholder="0" min="0" max="500"></div>
-      </div>
-    </div>
-  </div>
-
-  <!-- SECTION 8: GESAMTRANKING -->
+  <!-- SECTION 8: SPORT -->
   <div class="section" id="section-8">
-    <div class="section-label">08 — Gesamtranking</div>
-    <h2 class="section-heading">Abschließend.</h2>
-    <p class="section-desc">Alle vier Düfte nochmal im Vergleich.</p>
+    <div class="section-label">08 — Sport & Duft</div>
+    <h2 class="section-heading">Fast geschafft.</h2>
+    <p class="section-desc">Noch eine kurze Sache.</p>
+
     <div class="question">
-      <span class="question-label">Welchen Duft würdest du behalten wollen?</span>
-      <div class="rank-options" data-name="rank_keep" data-type="radio">
-        <div class="rank-option" data-value="A"><div class="rank-badge">A</div>Duft A</div>
-        <div class="rank-option" data-value="B"><div class="rank-badge">B</div>Duft B</div>
-        <div class="rank-option" data-value="C"><div class="rank-badge">C</div>Duft C</div>
-        <div class="rank-option" data-value="D"><div class="rank-badge">D</div>Duft D</div>
+      <span class="question-label">Machst du Sport?</span>
+      <div class="options" data-name="sport_makes">
+        <label class="option-item" data-sport="ja"><input type="radio" name="sport_makes" value="ja"> Ja</label>
+        <label class="option-item" data-sport="nein"><input type="radio" name="sport_makes" value="nein"> Nein</label>
       </div>
     </div>
-    <div class="divider"></div>
-    <div class="question">
-      <span class="question-label">Welchen würdest du weiterempfehlen?</span>
-      <div class="rank-options" data-name="rank_recommend" data-type="radio">
-        <div class="rank-option" data-value="A"><div class="rank-badge">A</div>Duft A</div>
-        <div class="rank-option" data-value="B"><div class="rank-badge">B</div>Duft B</div>
-        <div class="rank-option" data-value="C"><div class="rank-badge">C</div>Duft C</div>
-        <div class="rank-option" data-value="D"><div class="rank-badge">D</div>Duft D</div>
+
+    <div id="sport-follow-up" style="display:none;">
+      <div class="question">
+        <span class="question-label">Was für Sport machst du?</span>
+        <input type="text" class="text-input" id="sport_type" placeholder="z.B. Laufen, Gym, Fußball …">
       </div>
-    </div>
-    <div class="divider"></div>
-    <div class="question">
-      <span class="question-label">Gibt es etwas, das du uns mitgeben möchtest?</span>
-      <span class="question-hint">Optional.</span>
-      <textarea class="text-input" rows="4" id="final_feedback" placeholder="Dein Gedanke …"></textarea>
+      <div class="question">
+        <span class="question-label">Trägst du dabei einen Duft?</span>
+        <div class="options" data-name="sport_wear">
+          <label class="option-item"><input type="radio" name="sport_wear" value="ja"> Ja</label>
+          <label class="option-item"><input type="radio" name="sport_wear" value="manchmal"> Manchmal</label>
+          <label class="option-item"><input type="radio" name="sport_wear" value="nein"> Nein</label>
+        </div>
+      </div>
     </div>
   </div>
 
@@ -420,11 +488,25 @@
     <div class="thankyou-mark"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"></polyline></svg></div>
     <h2>Danke.</h2>
     <p>Dein Feedback hilft uns, etwas zu schaffen,<br>das wirklich zu dir passt.</p>
+
+    <!-- Email capture -->
+    <div class="email-capture" id="emailCapture">
+      <div class="email-divider"></div>
+      <p class="email-teaser">20% auf deinen ersten Kauf.</p>
+      <p class="email-desc">Trag dich ein, wir schicken dir bei Launch deinen persönlichen Rabattcode.</p>
+      <div class="email-row">
+        <input type="email" inputmode="email" autocomplete="email" class="text-input" id="emailInput" placeholder="deine@email.de">
+        <button class="btn btn-next" onclick="saveEmail()">Code sichern</button>
+      </div>
+    </div>
+
+    <div class="email-confirmed" id="emailConfirmed" style="display:none">
+      Wir melden uns bei Launch. ✦
+    </div>
   </div>
 
 </div>
 
-<!-- Navigation -->
 <div class="nav-wrap" id="navWrap">
   <span class="nav-counter" id="navCounter">1 / 8</span>
   <div class="btn-group">
@@ -435,152 +517,566 @@
 </div>
 
 <script>
-  // Supabase Init
-  const { createClient } = supabase;
-  const sb = createClient(
-    'https://xbyaffdahcndvwsvkyhf.supabase.co',
-    'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhieWFmZmRhaGNuZHZ3c3ZreWhmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzczNjc5NDQsImV4cCI6MjA5Mjk0Mzk0NH0.l43H1XIgM7R9P5dWSYeSWz8hxbpps8_7zML2yJ_obM4'
-  );
+const { createClient } = supabase;
+const sb = createClient(
+  'https://xbyaffdahcndvwsvkyhf.supabase.co',
+  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhieWFmZmRhaGNuZHZ3c3ZreWhmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzczNjc5NDQsImV4cCI6MjA5Mjk0Mzk0NH0.l43H1XIgM7R9P5dWSYeSWz8hxbpps8_7zML2yJ_obM4'
+);
 
-  const TOTAL = 8;
-  let current = 1;
-  let sessionId = 'sess_' + Date.now() + '_' + Math.random().toString(36).substr(2,6);
-  let dbRowId = null;
-  let answers = {};
+// ── Phase ─────────────────────────────────────────────────────────────────────
+// 'dev' → Testbetrieb  |  'pilot' → Erste echte Umfrage  |  'broad' → Erweitertes Umfeld
+const PHASE = 'dev';
 
-  function collectBlock(n) {
-    const block = {};
-    const sec = document.getElementById('section-' + n);
-    if (!sec) return block;
+const SCENT_ORDER = ['A','B','C','D'].sort(() => Math.random() - 0.5);
+const TOTAL = 8;
+const IMPRESSIONS = ['Erster','Zweiter','Dritter','Vierter'];
+const ADJ_LIST = ['Zitrisch','Frisch','Blumig','Fruchtig','Süß','Holzig','Herb & Klassisch','Orientalisch','Würzig','Weich & Hautnah'];
 
-    // Radio (label-based)
-    sec.querySelectorAll('.options .option-item.selected input').forEach(inp => {
-      if (inp.name) block[inp.name] = inp.value;
-    });
+let current = 0;
+let answers = {};
 
-    // Tags
-    sec.querySelectorAll('.tag-options').forEach(group => {
-      const sel = [...group.querySelectorAll('.tag.selected')].map(t => t.dataset.value);
-      if (sel.length) block[group.dataset.name] = sel;
-    });
+// ── Session Persistenz (localStorage) ────────────────────────────────────────
+// Verhindert doppelte Rows wenn User Browser schließt und neu öffnet
+let sessionId = localStorage.getItem('soon_session_id');
+let dbRowId   = localStorage.getItem('soon_row_id') || null;
 
-    // Scale
-    sec.querySelectorAll('.scale-buttons').forEach(group => {
-      const s = group.querySelector('.scale-btn.selected');
-      if (s) block[group.dataset.name] = parseInt(s.dataset.value);
-    });
+if (!sessionId) {
+  sessionId = 'sess_' + Date.now() + '_' + Math.random().toString(36).substr(2,6);
+  localStorage.setItem('soon_session_id', sessionId);
+}
 
-    // Naming
-    sec.querySelectorAll('.naming-option.selected').forEach(opt => {
-      const g = opt.closest('.naming-options');
-      block[g.dataset.name] = opt.dataset.value;
-    });
+// ── Build dynamic scent sections ──────────────────────────────────────────────
+function buildScentSections() {
+  const container = document.getElementById('scent-sections-container');
+  const tags = ADJ_LIST.map(t =>
+    `<span class="tag" data-value="${t.toLowerCase()}">${t}</span>`
+  ).join('');
 
-    // Rank
-    sec.querySelectorAll('.rank-option.selected').forEach(opt => {
-      const g = opt.closest('.rank-options');
-      block[g.dataset.name] = opt.dataset.value;
-    });
+  SCENT_ORDER.forEach((letter, i) => {
+    const sNum = i + 2;
+    const lc   = letter.toLowerCase();
+    const num  = String(sNum).padStart(2, '0');
 
-    // Text inputs
-    ['naming_feedback','price_a','price_b','price_c','price_d','final_feedback'].forEach(id => {
-      const el = sec.querySelector('#' + id) || document.getElementById(id);
-      if (el && el.value) block[id] = id.startsWith('price_') ? parseFloat(el.value) : el.value;
-    });
+    container.innerHTML += `
+    <div class="section" id="section-${sNum}">
 
-    return block;
+      <!-- Identity -->
+      <div class="scent-identity" style="margin-top:36px">
+        <div class="scent-letter">${letter}</div>
+        <div class="scent-identity-text">
+          <div class="section-label" style="margin-top:0">${num} — Duft ${letter}</div>
+          <h2 class="section-heading" style="font-size:clamp(18px,5vw,24px)">${IMPRESSIONS[i]} Eindruck.</h2>
+          <div class="scent-note">Blindtest — kein Produktname</div>
+        </div>
+      </div>
+
+      <!-- ① EINDRUCK -->
+      <div class="q-group">
+        <div class="q-group-label">① Eindruck</div>
+
+        <div class="question">
+          <span class="question-label">Welche Wörter passen?<span class="optional-badge">Optional</span></span>
+          <div class="tag-options" data-name="${lc}_adj">${tags}</div>
+        </div>
+
+        <div class="question">
+          <span class="question-label">Intensität</span>
+          <div class="scale-wrap">
+            <div class="scale-buttons" data-name="${lc}_intensity">
+              <button class="scale-btn" data-value="1">1</button>
+              <button class="scale-btn" data-value="2">2</button>
+              <button class="scale-btn" data-value="3">3</button>
+              <button class="scale-btn" data-value="4">4</button>
+              <button class="scale-btn" data-value="5">5</button>
+            </div>
+            <div class="scale-ends"><span>Intim</span><span>Intensiv</span></div>
+          </div>
+        </div>
+
+        <div class="question">
+          <span class="question-label">Dieser Duft wirkt eher …</span>
+          <div class="options grid-3" data-name="${lc}_gender_perception">
+            <label class="option-item"><input type="radio" name="${lc}_gender_perception" value="maskulin"> Maskulin</label>
+            <label class="option-item"><input type="radio" name="${lc}_gender_perception" value="feminin"> Feminin</label>
+            <label class="option-item"><input type="radio" name="${lc}_gender_perception" value="unisex"> Unisex</label>
+          </div>
+        </div>
+      </div>
+
+      <!-- ② NUTZUNG -->
+      <div class="q-group">
+        <div class="q-group-label">② Wann & Wo</div>
+
+        <div class="question">
+          <span class="question-label">Wann passt er?<span class="optional-badge">Optional</span></span>
+          <div class="img-options" data-name="${lc}_occasion" data-type="multi">
+            <div class="img-option" data-value="alltag">
+              <img src="https://images.unsplash.com/photo-1758613170887-3ac8fd2aca98?auto=format&fit=crop&w=400&h=500&q=80" alt="Alltag" loading="lazy">
+              <div class="img-option-overlay"><span class="img-option-name">Alltag</span></div>
+            </div>
+            <div class="img-option" data-value="buero">
+              <img src="https://images.unsplash.com/photo-1497366811353-6870744d04b2?auto=format&fit=crop&w=400&h=500&q=80" alt="Büro" loading="lazy">
+              <div class="img-option-overlay"><span class="img-option-name">Büro</span><span class="img-option-sub">Professionell & diskret</span></div>
+            </div>
+            <div class="img-option" data-value="ausgehen">
+              <img src="https://images.unsplash.com/photo-1560987617-6de57e3d0574?auto=format&fit=crop&w=400&h=500&q=80" alt="Ausgehen" loading="lazy">
+              <div class="img-option-overlay"><span class="img-option-name">Ausgehen</span></div>
+            </div>
+            <div class="img-option" data-value="sport">
+              <img src="https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?auto=format&fit=crop&w=400&h=500&q=80" alt="Sport" loading="lazy">
+              <div class="img-option-overlay"><span class="img-option-name">Sport</span></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="question">
+          <span class="question-label">Passende Jahreszeit?<span class="optional-badge">Optional</span></span>
+          <div class="img-options" data-name="${lc}_season" data-type="multi">
+            <div class="img-option" data-value="fruehling">
+              <img src="https://images.unsplash.com/photo-1712441577041-0e27034fddb3?auto=format&fit=crop&w=400&h=500&q=80" alt="Frühling" loading="lazy">
+              <div class="img-option-overlay"><span class="img-option-name">Frühling</span></div>
+            </div>
+            <div class="img-option" data-value="sommer">
+              <img src="https://images.unsplash.com/photo-1638946909005-ab7b28e82ea8?auto=format&fit=crop&w=400&h=500&q=80" alt="Sommer" loading="lazy">
+              <div class="img-option-overlay"><span class="img-option-name">Sommer</span></div>
+            </div>
+            <div class="img-option" data-value="herbst">
+              <img src="https://images.unsplash.com/photo-1761897190306-6592cbb61ba8?auto=format&fit=crop&w=400&h=500&q=80" alt="Herbst" loading="lazy">
+              <div class="img-option-overlay"><span class="img-option-name">Herbst</span><span class="img-option-sub">Wärme & Gewürze</span></div>
+            </div>
+            <div class="img-option" data-value="winter">
+              <img src="https://images.unsplash.com/photo-1760981248078-bfcb0c887b5a?auto=format&fit=crop&w=400&h=500&q=80" alt="Winter" loading="lazy">
+              <div class="img-option-overlay"><span class="img-option-name">Winter</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ③ WERT -->
+      <div class="q-group">
+        <div class="q-group-label">③ Wert</div>
+
+        <div class="question">
+          <span class="question-label">Was würdest du dafür zahlen? (50ml Extrait de Parfum)</span>
+          <div class="price-input-wrap">
+            <span class="price-symbol">€</span>
+            <input type="number" inputmode="decimal" class="text-input price-input"
+                   id="price_${lc}" placeholder="0" min="0" max="999">
+          </div>
+        </div>
+
+        <div class="question">
+          <span class="question-label">Dein Eindruck in Worten<span class="optional-badge">Optional</span></span>
+          <textarea class="text-input" rows="2" id="${lc}_feedback"
+                    placeholder="Einfach raus damit …"></textarea>
+        </div>
+      </div>
+
+    </div>`;
+  });
+}
+
+// ── Build ranking (Drag & Drop) ───────────────────────────────────────────────
+function buildRanking() {
+  const container = document.getElementById('ranking-container');
+
+  const list = document.createElement('div');
+  list.className = 'rank-list';
+  list.id = 'rank-list';
+
+  ['A','B','C','D'].forEach((letter, i) => {
+    const item = document.createElement('div');
+    item.className = 'rank-item';
+    item.dataset.fragrance = letter;
+    item.setAttribute('draggable', 'true');
+    item.innerHTML = `
+      <div class="rank-pos">${i + 1}</div>
+      <div class="scent-letter" style="width:44px;height:44px;font-size:18px;flex-shrink:0;border-radius:2px">${letter}</div>
+      <span class="rank-item-label">Duft ${letter}</span>
+      <div class="drag-handle">
+        <svg width="22" height="22" viewBox="0 0 22 22" fill="currentColor">
+          <rect x="4" y="5"  width="14" height="2" rx="1"/>
+          <rect x="4" y="10" width="14" height="2" rx="1"/>
+          <rect x="4" y="15" width="14" height="2" rx="1"/>
+        </svg>
+      </div>`;
+    list.appendChild(item);
+  });
+
+  const hint = document.createElement('p');
+  hint.className = 'rank-hint';
+  hint.textContent = '↕ Halten und ziehen zum Sortieren';
+
+  container.innerHTML = '';
+  container.appendChild(list);
+  container.appendChild(hint);
+
+  initDrag(list);
+}
+
+function updateRankPositions() {
+  document.querySelectorAll('#rank-list .rank-item').forEach((item, i) => {
+    item.querySelector('.rank-pos').textContent = i + 1;
+  });
+}
+
+function initDrag(list) {
+  let dragging = null;
+
+  function clearOverClasses() {
+    list.querySelectorAll('.rank-item').forEach(i => i.classList.remove('over-top','over-bottom'));
   }
 
-  async function saveBlock(blockNum, blockData) {
-    document.getElementById('savingDot').style.display = 'block';
-    Object.assign(answers, blockData);
-
-    const payload = {
-      session_id: sessionId,
-      block: blockNum,
-      completed: blockNum === TOTAL,
-      ...answers
-    };
-
-    try {
-      if (!dbRowId) {
-        const { data, error } = await sb.from('survey_responses').insert([payload]).select();
-        if (data && data[0]) dbRowId = data[0].id;
-      } else {
-        await sb.from('survey_responses').update(payload).eq('id', dbRowId);
+  function insertAt(clientY) {
+    if (!dragging) return;
+    const others = [...list.querySelectorAll('.rank-item')].filter(i => i !== dragging);
+    clearOverClasses();
+    let placed = false;
+    for (const item of others) {
+      const { top, height } = item.getBoundingClientRect();
+      if (clientY < top + height / 2) {
+        item.classList.add('over-top');
+        list.insertBefore(dragging, item);
+        placed = true;
+        break;
       }
-    } catch(e) { console.error(e); }
-
-    document.getElementById('savingDot').style.display = 'none';
+    }
+    if (!placed) list.appendChild(dragging);
+    updateRankPositions();
   }
 
-  function updateUI() {
-    document.getElementById('progressBar').style.width = ((current/TOTAL)*100) + '%';
-    document.getElementById('navCounter').textContent = current + ' / ' + TOTAL;
-    document.getElementById('btnBack').style.display = current > 1 ? 'inline-flex' : 'none';
-    const btn = document.getElementById('btnNext');
-    if (current === TOTAL) { btn.textContent = 'Absenden'; btn.className = 'btn btn-submit'; }
-    else { btn.textContent = 'Weiter'; btn.className = 'btn btn-next'; }
-  }
+  // Mouse
+  list.addEventListener('dragstart', e => {
+    dragging = e.target.closest('.rank-item');
+    if (!dragging) return;
+    setTimeout(() => dragging?.classList.add('dragging'), 0);
+    e.dataTransfer.effectAllowed = 'move';
+  });
+  list.addEventListener('dragover', e => { e.preventDefault(); insertAt(e.clientY); });
+  list.addEventListener('dragend', () => {
+    dragging?.classList.remove('dragging');
+    dragging = null;
+    clearOverClasses();
+    updateRankPositions();
+  });
 
-  function showSection(n) {
-    document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
-    const sec = document.getElementById('section-' + n);
-    if (sec) { sec.classList.add('active'); window.scrollTo({top:0,behavior:'smooth'}); }
-  }
+  // Touch
+  let touchItem = null;
+  list.addEventListener('touchstart', e => {
+    touchItem = e.target.closest('.rank-item');
+    if (touchItem) touchItem.classList.add('dragging');
+  }, { passive: true });
 
-  async function goNext() {
-    const blockData = collectBlock(current);
-    await saveBlock(current, blockData);
-    if (current < TOTAL) { current++; showSection(current); updateUI(); }
-    else { finish(); }
-  }
+  list.addEventListener('touchmove', e => {
+    if (!touchItem) return;
+    e.preventDefault();
+    dragging = touchItem;
+    insertAt(e.touches[0].clientY);
+  }, { passive: false });
 
-  function goBack() {
-    if (current > 1) { current--; showSection(current); updateUI(); }
-  }
+  list.addEventListener('touchend', () => {
+    touchItem?.classList.remove('dragging');
+    touchItem = null;
+    dragging = null;
+    clearOverClasses();
+    updateRankPositions();
+  });
+}
 
-  function finish() {
-    document.getElementById('navWrap').style.display = 'none';
-    document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
-    document.getElementById('thankyou').classList.add('active');
-    document.getElementById('progressBar').style.width = '100%';
-  }
-
-  // Interactions
+// ── Event listeners ───────────────────────────────────────────────────────────
+function initListeners() {
   document.querySelectorAll('.options .option-item').forEach(item => {
-    item.addEventListener('click', function() {
+    item.addEventListener('click', function () {
       this.closest('.options').querySelectorAll('.option-item').forEach(i => i.classList.remove('selected'));
       this.classList.add('selected');
       const inp = this.querySelector('input');
       if (inp) inp.checked = true;
+      // Sport conditional
+      if (this.dataset.sport) {
+        document.getElementById('sport-follow-up').style.display =
+          this.dataset.sport === 'ja' ? 'block' : 'none';
+      }
     });
   });
+
   document.querySelectorAll('.tag').forEach(tag => {
-    tag.addEventListener('click', function() { this.classList.toggle('selected'); });
+    tag.addEventListener('click', function () { this.classList.toggle('selected'); });
   });
+
   document.querySelectorAll('.scale-buttons').forEach(group => {
     group.querySelectorAll('.scale-btn').forEach(btn => {
-      btn.addEventListener('click', function() {
+      btn.addEventListener('click', function () {
         group.querySelectorAll('.scale-btn').forEach(b => b.classList.remove('selected'));
         this.classList.add('selected');
       });
     });
   });
+
   document.querySelectorAll('.naming-option').forEach(opt => {
-    opt.addEventListener('click', function() {
+    opt.addEventListener('click', function () {
       this.closest('.naming-options').querySelectorAll('.naming-option').forEach(o => o.classList.remove('selected'));
       this.classList.add('selected');
     });
   });
-  document.querySelectorAll('.rank-option').forEach(opt => {
-    opt.addEventListener('click', function() {
-      this.closest('.rank-options').querySelectorAll('.rank-option').forEach(o => o.classList.remove('selected'));
-      this.classList.add('selected');
+
+  // Image option cards (single or multi depending on data-type)
+  document.querySelectorAll('.img-options .img-option').forEach(opt => {
+    opt.addEventListener('click', function () {
+      const parent = this.closest('.img-options');
+      if (parent.dataset.type === 'multi') {
+        this.classList.toggle('selected');
+      } else {
+        parent.querySelectorAll('.img-option').forEach(o => o.classList.remove('selected'));
+        this.classList.add('selected');
+      }
     });
   });
+}
 
-  updateUI();
+// ── Data collection ───────────────────────────────────────────────────────────
+function collectBlock(n) {
+  const block = {};
+  const sec = document.getElementById('section-' + n);
+  if (!sec) return block;
+
+  sec.querySelectorAll('.options .option-item.selected input').forEach(inp => {
+    if (inp.name) block[inp.name] = inp.value;
+  });
+
+  sec.querySelectorAll('.tag-options').forEach(group => {
+    const sel = [...group.querySelectorAll('.tag.selected')].map(t => t.dataset.value);
+    if (sel.length) block[group.dataset.name] = sel;
+  });
+
+  sec.querySelectorAll('.scale-buttons').forEach(group => {
+    const s = group.querySelector('.scale-btn.selected');
+    if (s) block[group.dataset.name] = parseInt(s.dataset.value);
+  });
+
+  sec.querySelectorAll('.naming-option.selected').forEach(opt => {
+    const g = opt.closest('.naming-options');
+    if (g?.dataset?.name) block[g.dataset.name] = opt.dataset.value;
+  });
+
+  // Image option cards (single or multi)
+  sec.querySelectorAll('.img-options').forEach(group => {
+    if (!group.dataset.name) return;
+    if (group.dataset.type === 'multi') {
+      const vals = [...group.querySelectorAll('.img-option.selected')].map(o => o.dataset.value);
+      if (vals.length) block[group.dataset.name] = vals;
+    } else {
+      const sel = group.querySelector('.img-option.selected');
+      if (sel) block[group.dataset.name] = sel.dataset.value;
+    }
+  });
+
+  sec.querySelectorAll('input[id], textarea[id]').forEach(el => {
+    if (!el.value) return;
+    const id = el.id;
+    if (id.startsWith('price_')) {
+      const v = parseFloat(el.value);
+      if (!isNaN(v) && v > 0) block[id] = v;
+    } else {
+      block[id] = el.value;
+    }
+  });
+
+  // Ranking: DOM order = rank
+  if (n === 6) {
+    document.querySelectorAll('#rank-list .rank-item').forEach((item, i) => {
+      block['rank_' + (i + 1)] = item.dataset.fragrance;
+    });
+  }
+
+  return block;
+}
+
+// ── Validation ───────────────────────────────────────────────────────────────
+function validateBlock(n) {
+  const sec = document.getElementById('section-' + n);
+  const missing = []; // collect question elements that are unfilled
+
+  function checkRadio(dataName) {
+    const group = sec.querySelector(`.options[data-name="${dataName}"]`);
+    if (group && !group.querySelector('.option-item.selected')) missing.push(group.closest('.question'));
+  }
+  function checkScale(dataName) {
+    const group = sec.querySelector(`.scale-buttons[data-name="${dataName}"]`);
+    if (group && !group.querySelector('.scale-btn.selected')) missing.push(group.closest('.question'));
+  }
+  function checkInput(id) {
+    const el = sec.querySelector('#' + id);
+    if (el && !el.value.trim()) missing.push(el.closest('.question'));
+  }
+  function checkNaming() {
+    const card = sec.querySelector('.naming-options');
+    if (card && !card.querySelector('.naming-option.selected')) missing.push(card.closest('.question') || card.parentElement);
+  }
+
+  if (n === 1) {
+    checkRadio('gender');
+    checkInput('age');
+  }
+
+  if (n >= 2 && n <= 5) {
+    const lc = SCENT_ORDER[n - 2].toLowerCase();
+    checkScale(`${lc}_intensity`);
+    checkRadio(`${lc}_gender_perception`);
+    checkInput(`price_${lc}`);
+  }
+
+  if (n === 7) checkNaming();
+
+  if (n === 8) checkRadio('sport_makes');
+
+  return missing.filter(Boolean);
+}
+
+let toastTimer = null;
+function showToast(msg) {
+  let toast = document.getElementById('val-toast');
+  if (!toast) {
+    toast = document.createElement('div');
+    toast.id = 'val-toast';
+    toast.className = 'val-toast';
+    document.body.appendChild(toast);
+  }
+  toast.textContent = msg;
+  toast.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => toast.classList.remove('show'), 2800);
+}
+
+function showValidationErrors(missing) {
+  // Clear old errors
+  document.querySelectorAll('.q-required-error').forEach(el => el.classList.remove('q-required-error'));
+  // Mark missing
+  missing.forEach(el => { if (el) el.classList.add('q-required-error'); });
+  // Scroll to first
+  if (missing[0]) missing[0].scrollIntoView({ behavior: 'smooth', block: 'center' });
+  showToast('Bitte beantworte alle Pflichtfragen ↑');
+  // Auto-clear error classes after 3s
+  setTimeout(() => {
+    document.querySelectorAll('.q-required-error').forEach(el => el.classList.remove('q-required-error'));
+  }, 3000);
+}
+
+// ── Save ─────────────────────────────────────────────────────────────────────
+async function saveBlock(blockNum, blockData) {
+  const btnNext = document.getElementById('btnNext');
+  document.getElementById('savingDot').style.display = 'block';
+  btnNext.disabled = true;
+
+  Object.assign(answers, blockData);
+  if (blockNum === 1) answers.scent_order = SCENT_ORDER;
+
+  const payload = { session_id: sessionId, block: blockNum, completed: blockNum === TOTAL, phase: PHASE, ...answers };
+
+  try {
+    if (!dbRowId) {
+      const { data, error } = await sb.from('survey_responses').insert([payload]).select();
+      if (data?.[0]) {
+        dbRowId = data[0].id;
+        localStorage.setItem('soon_row_id', dbRowId);
+      }
+      if (error) console.error('Insert:', error);
+    } else {
+      const { error } = await sb.from('survey_responses').update(payload).eq('id', dbRowId);
+      if (error) console.error('Update:', error);
+    }
+  } catch(e) { console.error('Save error:', e); }
+
+  document.getElementById('savingDot').style.display = 'none';
+  btnNext.disabled = false;
+}
+
+// ── Navigation ────────────────────────────────────────────────────────────────
+function updateUI() {
+  if (current === 0) {
+    // Intro screen — no counter, no back, button label changes
+    document.getElementById('progressBar').style.width = '0%';
+    document.getElementById('navCounter').style.visibility = 'hidden';
+    document.getElementById('btnBack').style.display = 'none';
+    const btn = document.getElementById('btnNext');
+    btn.textContent = 'Umfrage starten';
+    btn.className = 'btn btn-next';
+    return;
+  }
+  document.getElementById('navCounter').style.visibility = 'visible';
+  document.getElementById('progressBar').style.width = ((current / TOTAL) * 100) + '%';
+  document.getElementById('navCounter').textContent = current + ' / ' + TOTAL;
+  document.getElementById('btnBack').style.display = current > 1 ? 'inline-flex' : 'none';
+  const btn = document.getElementById('btnNext');
+  if (current === TOTAL) { btn.textContent = 'Absenden'; btn.className = 'btn btn-submit'; }
+  else { btn.textContent = 'Weiter'; btn.className = 'btn btn-next'; }
+}
+
+function showSection(n) {
+  document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+  const sec = document.getElementById('section-' + n);
+  if (sec) { sec.classList.add('active'); window.scrollTo({ top: 0, behavior: 'smooth' }); }
+  // Kompakt-Header ab Sektion 2 (Intro bei 0 und Über-dich bei 1 bleiben voll)
+  document.querySelector('.survey-header').classList.toggle('compact', n > 1);
+}
+
+async function goNext() {
+  // Intro → einfach starten, kein Speichern nötig
+  if (current === 0) {
+    current = 1; showSection(1); updateUI(); return;
+  }
+
+  const missing = validateBlock(current);
+  if (missing.length > 0) { showValidationErrors(missing); return; }
+
+  const blockData = collectBlock(current);
+  await saveBlock(current, blockData);
+  if (current < TOTAL) { current++; showSection(current); updateUI(); }
+  else { finish(); }
+}
+
+function goBack() {
+  if (current > 1) { current--; showSection(current); updateUI(); }
+}
+
+async function saveEmail() {
+  const input = document.getElementById('emailInput');
+  const email = input.value.trim();
+  if (!email || !email.includes('@')) {
+    input.style.borderColor = 'var(--error-border)';
+    input.focus();
+    return;
+  }
+  input.style.borderColor = '';
+  const btn = input.nextElementSibling;
+  btn.disabled = true;
+  btn.textContent = '…';
+
+  if (dbRowId) {
+    await sb.from('survey_responses').update({ email }).eq('id', dbRowId);
+  }
+
+  document.getElementById('emailCapture').style.display = 'none';
+  document.getElementById('emailConfirmed').style.display = 'block';
+}
+
+function finish() {
+  // Session aus localStorage löschen → nächste Öffnung startet frisch
+  localStorage.removeItem('soon_session_id');
+  localStorage.removeItem('soon_row_id');
+
+  document.getElementById('navWrap').style.display = 'none';
+  document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+  document.getElementById('thankyou').classList.add('active');
+  document.getElementById('progressBar').style.width = '100%';
+}
+
+// ── Init ──────────────────────────────────────────────────────────────────────
+if (PHASE === 'dev') document.getElementById('devBadge').style.display = 'block';
+
+buildScentSections();
+buildRanking();
+initListeners();
+updateUI();
 </script>
 </body>
 </html>
