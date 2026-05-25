@@ -366,10 +366,10 @@
         <div class="range-slider-track">
           <div class="range-slider-fill" id="fragSliderFill"></div>
         </div>
-        <input type="range" id="fragMin" min="0" max="30" value="0"  step="1" oninput="onFragSlider()">
-        <input type="range" id="fragMax" min="0" max="30" value="30" step="1" oninput="onFragSlider()">
+        <input type="range" id="fragMin" min="0" max="50" value="0"  step="1" oninput="onFragSlider()">
+        <input type="range" id="fragMax" min="0" max="50" value="50" step="1" oninput="onFragSlider()">
       </div>
-      <span class="age-val" id="fragMaxVal">30+</span>
+      <span class="age-val" id="fragMaxVal">50+</span>
     </div>
   </div>
 
@@ -419,7 +419,7 @@ const sb = createClient(
 // ── State ────────────────────────────────────────────────────────────────────
 let allRows = [];
 let ageRange  = [16, 80];
-let fragRange = [0, 30];
+let fragRange = [0, 50];
 let genderFilter = 'all';
 let priceRows = {A:[], B:[], C:[], D:[]}; // global für Modal: [{price, age, gender}]
 let phaseFilter = 'dev';
@@ -531,7 +531,7 @@ function updateSliderFill() {
 
   const fmn = parseInt(document.getElementById('fragMin').value);
   const fmx = parseInt(document.getElementById('fragMax').value);
-  const fRange = 30;
+  const fRange = 50;
   const fLeft  = (Math.min(fmn,fmx) / fRange) * 100;
   const fRight = (Math.max(fmn,fmx) / fRange) * 100;
   document.getElementById('fragSliderFill').style.left  = fLeft  + '%';
@@ -544,7 +544,7 @@ function onFragSlider() {
   if (mn > mx) { const tmp = mn; mn = mx; mx = tmp; }
   fragRange = [mn, mx];
   document.getElementById('fragMinVal').textContent = mn;
-  document.getElementById('fragMaxVal').textContent = mx === 30 ? '30+' : mx;
+  document.getElementById('fragMaxVal').textContent = mx === 50 ? '50+' : mx;
   updateSliderFill();
   render();
 }
