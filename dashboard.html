@@ -264,6 +264,7 @@
   }
   .price-row.outlier { background:#FEF2F2; }
   .price-row-val { font-weight:500; }
+  .price-row-meta { font-size:11px; color:var(--text-muted); margin-top:3px; }
   .price-row-badge {
     font-size:10px; letter-spacing:0.1em; text-transform:uppercase;
     color:#E10600; background:#FEE2E2; padding:2px 7px; border-radius:100px;
@@ -404,7 +405,7 @@ const sb = createClient(
 let allRows = [];
 let ageRange = [16, 80];
 let genderFilter = 'all';
-let priceData = {a:[], b:[], c:[], d:[]}; // global für Modal-Zugriff
+let priceRows = {A:[], B:[], C:[], D:[]}; // global für Modal: [{price, age, gender}]
 let phaseFilter = 'dev';
 let activeTab = 'overview';
 
@@ -554,7 +555,12 @@ function renderOverview(rows) {
       if (!isNaN(p) && p > 0) prices[l].push(p);
     });
   });
-  priceData = prices; // global speichern für Modal
+  // Global speichern mit Alter + Geschlecht für Modal
+  ['a','b','c','d'].forEach(l => {
+    priceRows[l.toUpperCase()] = rows
+      .map(r => ({ price: parseFloat(r['price_'+l]), age: r.age, gender: r.gender }))
+      .filter(r => !isNaN(r.price) && r.price > 0);
+  });
   const avgP = {};
   ['a','b','c','d'].forEach(l => { avgP[l] = avg(prices[l]); });
 
@@ -637,7 +643,7 @@ function renderOverview(rows) {
   html += '<h2 class="section-heading">Preisbereitschaft — Ø 50ml Extrait de Parfum</h2><div class="grid-4">';
   ['a','b','c','d'].forEach(l => {
     const a = avgP[l];
-    html += `<div class="price-card" onclick="openPriceModal('${l.toUpperCase()}', priceData['${l}'])">
+    html += `<div class="price-card" onclick="openPriceModal('${l.toUpperCase()}')">
       <div class="price-letter">Duft ${l.toUpperCase()}</div>
       <div class="price-avg">${a ? '€ ' + Math.round(a) : '–'}</div>
       <div class="price-unit">Ø aus ${prices[l].length} Angaben</div>
@@ -714,6 +720,10 @@ function renderScent(rows, letter) {
   const priceArr = sRows.map(r => parseFloat(r['price_'+l])).filter(v => !isNaN(v) && v > 0);
   const intArr   = sRows.map(r => parseInt(r[l+'_intensity'])).filter(v => !isNaN(v) && v > 0);
   const avgPrice = avg(priceArr);
+  // Global speichern für Modal (mit Alter + Geschlecht)
+  priceRows[letter] = sRows
+    .map(r => ({ price: parseFloat(r['price_'+l]), age: r.age, gender: r.gender }))
+    .filter(r => !isNaN(r.price) && r.price > 0);
   const avgInt   = avg(intArr);
 
   const rank1Count = rows.filter(r => r.rank_1 === letter).length;
@@ -767,7 +777,7 @@ function renderScent(rows, letter) {
   html += `<div class="scent-hero">
     <div class="scent-hero-letter">${letter}</div>
     <div class="scent-hero-kpis">
-      <div class="scent-hero-kpi" style="cursor:pointer" onclick="openPriceModal('${letter}', ${JSON.stringify(priceArr)})">
+      <div class="scent-hero-kpi" style="cursor:pointer" onclick="openPriceModal('${letter}')">
         <div class="val">${avgPrice ? '€ ' + Math.round(avgPrice) : '–'}</div>
         <div class="lbl">Ø Preisbereitschaft</div>
         <div class="price-hint">↗ Details</div>
@@ -887,27 +897,33 @@ if (sessionStorage.getItem('dash_auth') === '1') {
 }
 
 // ── Price Modal ───────────────────────────────────────────────────────────────
-function openPriceModal(letter, pricesArr) {
-  if (!pricesArr || pricesArr.length === 0) return;
+function openPriceModal(letter) {
+  const data = priceRows[letter] || [];
+  if (!data.length) return;
 
-  const sorted = [...pricesArr].sort((a, b) => a - b);
+  const sorted = [...data].sort((a, b) => a.price - b.price);
   const total  = sorted.length;
-  const mean   = sorted.reduce((s, v) => s + v, 0) / total;
+  const mean   = sorted.reduce((s, r) => s + r.price, 0) / total;
 
   // Median für Ausreißer-Erkennung
   const mid    = Math.floor(total / 2);
-  const median = total % 2 !== 0 ? sorted[mid] : (sorted[mid - 1] + sorted[mid]) / 2;
+  const median = total % 2 !== 0 ? sorted[mid].price : (sorted[mid-1].price + sorted[mid].price) / 2;
   const outlierThreshold = median * 2.5;
+
+  const gLabel = g => g === 'm' ? 'Männlich' : g === 'w' ? 'Weiblich' : g === 'd' ? 'Divers' : '–';
 
   document.getElementById('modalTitle').textContent = `Preise — Duft ${letter}`;
   document.getElementById('modalMeta').textContent  = `${total} Angabe${total !== 1 ? 'n' : ''}`;
   document.getElementById('modalAvgVal').textContent = `€ ${Math.round(mean)}`;
 
   const body = document.getElementById('modalPriceList');
-  body.innerHTML = sorted.reverse().map(p => {
-    const isOutlier = p > outlierThreshold;
+  body.innerHTML = sorted.reverse().map(r => {
+    const isOutlier = r.price > outlierThreshold;
     return `<div class="price-row${isOutlier ? ' outlier' : ''}">
-      <span class="price-row-val">€ ${p}</span>
+      <div>
+        <div class="price-row-val">€ ${r.price}</div>
+        <div class="price-row-meta">Alter ${r.age || '–'} · ${gLabel(r.gender)}</div>
+      </div>
       ${isOutlier ? '<span class="price-row-badge">Ausreißer</span>' : ''}
     </div>`;
   }).join('');
