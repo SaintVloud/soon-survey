@@ -423,6 +423,27 @@
     </div>
   </div>
 
+  <!-- SECTION 1b: DUFT-INTRO -->
+  <div class="section" id="section-scent-intro">
+    <div class="intro-content" style="padding-top:48px; padding-bottom:32px;">
+      <div class="intro-eyebrow">Blind-Test · 4 Düfte</div>
+      <h2 class="intro-heading" style="font-size:clamp(22px,6vw,34px); line-height:1.25; margin-bottom:20px;">Jetzt geht's<br>an die Düfte.</h2>
+      <p class="intro-body" style="margin-bottom:32px;">
+        Du wirst gleich vier verschiedene Düfte bewerten — einen nach dem anderen. Kein Produktname, kein Label. Nur dein erster, ehrlicher Eindruck zählt.
+      </p>
+      <div class="intro-meta">
+        <div class="intro-meta-item">
+          <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+          <span>Ca. 5 Minuten für alle vier Düfte</span>
+        </div>
+        <div class="intro-meta-item">
+          <svg viewBox="0 0 24 24"><path d="M12 2a7 7 0 0 1 7 7c0 4-7 13-7 13S5 13 5 9a7 7 0 0 1 7-7z"/><circle cx="12" cy="9" r="2.5"/></svg>
+          <span>Kein Duft ist besser oder schlechter — es gibt kein Richtig oder Falsch</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <!-- SECTIONS 2–5: DÜFTE (dynamisch + randomisiert) -->
   <div id="scent-sections-container"></div>
 
@@ -530,7 +551,7 @@ const PHASE = 'dev';
 const SCENT_ORDER = ['A','B','C','D'].sort(() => Math.random() - 0.5);
 const TOTAL = 8;
 const IMPRESSIONS = ['Erster','Zweiter','Dritter','Vierter'];
-const ADJ_LIST = ['Zitrisch','Frisch','Blumig','Fruchtig','Süß','Holzig','Herb & Klassisch','Orientalisch','Würzig','Weich & Hautnah'];
+const ADJ_LIST = ['Zitrisch','Frisch','Blumig','Fruchtig','Süß','Holzig','Herb & Klassisch','Orientalisch','Würzig','Weich & Hautnah','Sportlich','Elegant','Verführerisch','Exotisch','Entspannt'];
 
 let current = 0;
 let answers = {};
@@ -575,7 +596,7 @@ function buildScentSections() {
         <div class="q-group-label">① Eindruck</div>
 
         <div class="question">
-          <span class="question-label">Welche Wörter passen?<span class="optional-badge">Optional</span></span>
+          <span class="question-label">Welche Wörter beschreiben diesen Duft am besten?<span class="optional-badge">Optional</span></span>
           <div class="tag-options" data-name="${lc}_adj">${tags}</div>
         </div>
 
@@ -608,7 +629,7 @@ function buildScentSections() {
         <div class="q-group-label">② Wann & Wo</div>
 
         <div class="question">
-          <span class="question-label">Wann passt er?<span class="optional-badge">Optional</span></span>
+          <span class="question-label">Wo würdest du diesen Duft tragen?<span class="optional-badge">Optional</span></span>
           <div class="img-options" data-name="${lc}_occasion" data-type="multi">
             <div class="img-option" data-value="alltag">
               <img src="https://images.unsplash.com/photo-1758613170887-3ac8fd2aca98?auto=format&fit=crop&w=400&h=500&q=80" alt="Alltag" loading="lazy">
@@ -616,7 +637,7 @@ function buildScentSections() {
             </div>
             <div class="img-option" data-value="buero">
               <img src="https://images.unsplash.com/photo-1497366811353-6870744d04b2?auto=format&fit=crop&w=400&h=500&q=80" alt="Büro" loading="lazy">
-              <div class="img-option-overlay"><span class="img-option-name">Büro</span><span class="img-option-sub">Professionell & diskret</span></div>
+              <div class="img-option-overlay"><span class="img-option-name">Büro</span></div>
             </div>
             <div class="img-option" data-value="ausgehen">
               <img src="https://images.unsplash.com/photo-1560987617-6de57e3d0574?auto=format&fit=crop&w=400&h=500&q=80" alt="Ausgehen" loading="lazy">
@@ -642,10 +663,10 @@ function buildScentSections() {
             </div>
             <div class="img-option" data-value="herbst">
               <img src="https://images.unsplash.com/photo-1761897190306-6592cbb61ba8?auto=format&fit=crop&w=400&h=500&q=80" alt="Herbst" loading="lazy">
-              <div class="img-option-overlay"><span class="img-option-name">Herbst</span><span class="img-option-sub">Wärme & Gewürze</span></div>
+              <div class="img-option-overlay"><span class="img-option-name">Herbst</span></div>
             </div>
             <div class="img-option" data-value="winter">
-              <img src="https://images.unsplash.com/photo-1760981248078-bfcb0c887b5a?auto=format&fit=crop&w=400&h=500&q=80" alt="Winter" loading="lazy">
+              <img src="https://images.unsplash.com/photo-1491466424936-e304919aada7?auto=format&fit=crop&w=400&h=500&q=80" alt="Winter" loading="lazy">
               <div class="img-option-overlay"><span class="img-option-name">Winter</span></div>
             </div>
           </div>
@@ -657,7 +678,7 @@ function buildScentSections() {
         <div class="q-group-label">③ Wert</div>
 
         <div class="question">
-          <span class="question-label">Was würdest du dafür zahlen? (50ml Extrait de Parfum)</span>
+          <span class="question-label">Was würdest du für diesen Duft bezahlen? (50ml Extrait de Parfum)</span>
           <div class="price-input-wrap">
             <span class="price-symbol">€</span>
             <input type="number" inputmode="decimal" class="text-input price-input"
@@ -666,7 +687,7 @@ function buildScentSections() {
         </div>
 
         <div class="question">
-          <span class="question-label">Dein Eindruck in Worten<span class="optional-badge">Optional</span></span>
+          <span class="question-label">Dein Feedback zu diesem Duft<span class="optional-badge">Optional</span></span>
           <textarea class="text-input" rows="2" id="${lc}_feedback"
                     placeholder="Einfach raus damit …"></textarea>
         </div>
@@ -1004,6 +1025,16 @@ function updateUI() {
     btn.className = 'btn btn-next';
     return;
   }
+  if (current === 'scent-intro') {
+    // Transition screen between "Über dich" and first scent
+    document.getElementById('progressBar').style.width = ((1 / TOTAL) * 100) + '%';
+    document.getElementById('navCounter').style.visibility = 'hidden';
+    document.getElementById('btnBack').style.display = 'inline-flex';
+    const btn = document.getElementById('btnNext');
+    btn.textContent = 'Los geht\'s';
+    btn.className = 'btn btn-next';
+    return;
+  }
   document.getElementById('navCounter').style.visibility = 'visible';
   document.getElementById('progressBar').style.width = ((current / TOTAL) * 100) + '%';
   document.getElementById('navCounter').textContent = current + ' / ' + TOTAL;
@@ -1017,8 +1048,9 @@ function showSection(n) {
   document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
   const sec = document.getElementById('section-' + n);
   if (sec) { sec.classList.add('active'); window.scrollTo({ top: 0, behavior: 'smooth' }); }
-  // Kompakt-Header ab Sektion 2 (Intro bei 0 und Über-dich bei 1 bleiben voll)
-  document.querySelector('.survey-header').classList.toggle('compact', n > 1);
+  // Kompakt-Header ab Sektion 2 (Intro, Über-dich und Scent-Intro bleiben voll)
+  const isCompact = n !== 0 && n !== 1 && n !== 'scent-intro' && n > 1;
+  document.querySelector('.survey-header').classList.toggle('compact', isCompact);
 }
 
 async function goNext() {
@@ -1027,16 +1059,29 @@ async function goNext() {
     current = 1; showSection(1); updateUI(); return;
   }
 
+  // Scent-Intro transition screen → weiter zum ersten Duft
+  if (current === 'scent-intro') {
+    current = 2; showSection(2); updateUI(); return;
+  }
+
   const missing = validateBlock(current);
   if (missing.length > 0) { showValidationErrors(missing); return; }
 
   const blockData = collectBlock(current);
   await saveBlock(current, blockData);
+
+  // After "Über dich" (block 1) → show scent intro first
+  if (current === 1) {
+    current = 'scent-intro'; showSection('scent-intro'); updateUI(); return;
+  }
+
   if (current < TOTAL) { current++; showSection(current); updateUI(); }
   else { finish(); }
 }
 
 function goBack() {
+  if (current === 'scent-intro') { current = 1; showSection(1); updateUI(); return; }
+  if (current === 2) { current = 'scent-intro'; showSection('scent-intro'); updateUI(); return; }
   if (current > 1) { current--; showSection(current); updateUI(); }
 }
 
