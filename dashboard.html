@@ -227,6 +227,52 @@
   .loading { text-align:center; padding:80px; color:var(--text-muted); font-size:14px; }
   .empty { font-size:13px; color:var(--text-muted); padding:16px 0; }
 
+  /* ── Price Modal ── */
+  .modal-overlay {
+    display:none; position:fixed; inset:0; background:rgba(0,0,0,0.45);
+    z-index:200; align-items:center; justify-content:center; padding:24px;
+  }
+  .modal-overlay.open { display:flex; }
+  .modal {
+    background:var(--white); border-radius:4px; width:100%; max-width:440px;
+    max-height:80vh; display:flex; flex-direction:column; overflow:hidden;
+    box-shadow:0 8px 40px rgba(0,0,0,0.18);
+  }
+  .modal-header {
+    padding:20px 24px 16px; border-bottom:1px solid var(--border);
+    display:flex; align-items:flex-start; justify-content:space-between; gap:16px;
+    flex-shrink:0;
+  }
+  .modal-title { font-size:16px; font-weight:400; letter-spacing:-0.01em; }
+  .modal-meta { font-size:12px; color:var(--text-muted); margin-top:3px; }
+  .modal-close {
+    background:none; border:none; cursor:pointer; font-size:20px; line-height:1;
+    color:var(--text-muted); padding:0; flex-shrink:0; margin-top:-2px;
+  }
+  .modal-close:hover { color:var(--text); }
+  .modal-body { overflow-y:auto; padding:16px 24px 24px; }
+  .modal-avg {
+    display:flex; align-items:baseline; gap:8px; margin-bottom:20px;
+    padding-bottom:16px; border-bottom:1px solid var(--border);
+  }
+  .modal-avg-val { font-size:28px; font-weight:300; letter-spacing:-0.02em; }
+  .modal-avg-lbl { font-size:12px; color:var(--text-muted); letter-spacing:0.05em; text-transform:uppercase; }
+  .price-row {
+    display:flex; align-items:center; justify-content:space-between;
+    padding:9px 12px; border-radius:2px; margin-bottom:4px;
+    background:var(--bg); font-size:14px;
+  }
+  .price-row.outlier { background:#FEF2F2; }
+  .price-row-val { font-weight:500; }
+  .price-row-badge {
+    font-size:10px; letter-spacing:0.1em; text-transform:uppercase;
+    color:#E10600; background:#FEE2E2; padding:2px 7px; border-radius:100px;
+  }
+  /* Clickable price cards */
+  .price-card { cursor:pointer; transition:border-color 0.15s, box-shadow 0.15s; }
+  .price-card:hover { border-color:var(--text); box-shadow:0 2px 8px rgba(0,0,0,0.08); }
+  .price-hint { font-size:10px; color:var(--text-muted); margin-top:8px; letter-spacing:0.05em; }
+
   /* ── Login Screen ── */
   .login-screen {
     position:fixed; inset:0; background:var(--bg);
@@ -358,6 +404,7 @@ const sb = createClient(
 let allRows = [];
 let ageRange = [16, 80];
 let genderFilter = 'all';
+let priceData = {a:[], b:[], c:[], d:[]}; // global für Modal-Zugriff
 let phaseFilter = 'dev';
 let activeTab = 'overview';
 
@@ -507,6 +554,7 @@ function renderOverview(rows) {
       if (!isNaN(p) && p > 0) prices[l].push(p);
     });
   });
+  priceData = prices; // global speichern für Modal
   const avgP = {};
   ['a','b','c','d'].forEach(l => { avgP[l] = avg(prices[l]); });
 
@@ -589,10 +637,11 @@ function renderOverview(rows) {
   html += '<h2 class="section-heading">Preisbereitschaft — Ø 50ml Extrait de Parfum</h2><div class="grid-4">';
   ['a','b','c','d'].forEach(l => {
     const a = avgP[l];
-    html += `<div class="price-card">
+    html += `<div class="price-card" onclick="openPriceModal('${l.toUpperCase()}', priceData['${l}'])">
       <div class="price-letter">Duft ${l.toUpperCase()}</div>
       <div class="price-avg">${a ? '€ ' + Math.round(a) : '–'}</div>
       <div class="price-unit">Ø aus ${prices[l].length} Angaben</div>
+      <div class="price-hint">↗ Details</div>
     </div>`;
   });
   html += '</div><div class="divider"></div>';
@@ -718,9 +767,10 @@ function renderScent(rows, letter) {
   html += `<div class="scent-hero">
     <div class="scent-hero-letter">${letter}</div>
     <div class="scent-hero-kpis">
-      <div class="scent-hero-kpi">
+      <div class="scent-hero-kpi" style="cursor:pointer" onclick="openPriceModal('${letter}', ${JSON.stringify(priceArr)})">
         <div class="val">${avgPrice ? '€ ' + Math.round(avgPrice) : '–'}</div>
         <div class="lbl">Ø Preisbereitschaft</div>
+        <div class="price-hint">↗ Details</div>
       </div>
       <div class="scent-hero-kpi">
         <div class="val">${avgInt ? avgInt.toFixed(1) : '–'} / 5</div>
@@ -835,6 +885,59 @@ if (sessionStorage.getItem('dash_auth') === '1') {
   document.getElementById('loginScreen').style.display = 'none';
   loadData();
 }
+
+// ── Price Modal ───────────────────────────────────────────────────────────────
+function openPriceModal(letter, pricesArr) {
+  if (!pricesArr || pricesArr.length === 0) return;
+
+  const sorted = [...pricesArr].sort((a, b) => a - b);
+  const total  = sorted.length;
+  const mean   = sorted.reduce((s, v) => s + v, 0) / total;
+
+  // Median für Ausreißer-Erkennung
+  const mid    = Math.floor(total / 2);
+  const median = total % 2 !== 0 ? sorted[mid] : (sorted[mid - 1] + sorted[mid]) / 2;
+  const outlierThreshold = median * 2.5;
+
+  document.getElementById('modalTitle').textContent = `Preise — Duft ${letter}`;
+  document.getElementById('modalMeta').textContent  = `${total} Angabe${total !== 1 ? 'n' : ''}`;
+  document.getElementById('modalAvgVal').textContent = `€ ${Math.round(mean)}`;
+
+  const body = document.getElementById('modalPriceList');
+  body.innerHTML = sorted.reverse().map(p => {
+    const isOutlier = p > outlierThreshold;
+    return `<div class="price-row${isOutlier ? ' outlier' : ''}">
+      <span class="price-row-val">€ ${p}</span>
+      ${isOutlier ? '<span class="price-row-badge">Ausreißer</span>' : ''}
+    </div>`;
+  }).join('');
+
+  document.getElementById('priceModal').classList.add('open');
+}
+
+function closePriceModal() {
+  document.getElementById('priceModal').classList.remove('open');
+}
 </script>
+
+<!-- Price Modal -->
+<div class="modal-overlay" id="priceModal" onclick="if(event.target===this) closePriceModal()">
+  <div class="modal">
+    <div class="modal-header">
+      <div>
+        <div class="modal-title" id="modalTitle"></div>
+        <div class="modal-meta" id="modalMeta"></div>
+      </div>
+      <button class="modal-close" onclick="closePriceModal()">×</button>
+    </div>
+    <div class="modal-body">
+      <div class="modal-avg">
+        <div class="modal-avg-val" id="modalAvgVal"></div>
+        <div class="modal-avg-lbl">Durchschnitt</div>
+      </div>
+      <div id="modalPriceList"></div>
+    </div>
+  </div>
+</div>
 </body>
 </html>
