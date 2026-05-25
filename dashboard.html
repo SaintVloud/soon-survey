@@ -359,6 +359,21 @@
   </div>
 
   <div class="filter-group">
+    <span class="filter-label">Düfte</span>
+    <div class="age-slider-wrap">
+      <span class="age-val" id="fragMinVal">0</span>
+      <div class="range-slider" id="fragRangeSlider">
+        <div class="range-slider-track">
+          <div class="range-slider-fill" id="fragSliderFill"></div>
+        </div>
+        <input type="range" id="fragMin" min="0" max="30" value="0"  step="1" oninput="onFragSlider()">
+        <input type="range" id="fragMax" min="0" max="30" value="30" step="1" oninput="onFragSlider()">
+      </div>
+      <span class="age-val" id="fragMaxVal">30+</span>
+    </div>
+  </div>
+
+  <div class="filter-group">
     <span class="filter-label">Geschlecht</span>
     <div class="gender-btns">
       <button class="gender-btn active" data-g="all"  onclick="setGender(this)">Alle</button>
@@ -403,7 +418,8 @@ const sb = createClient(
 
 // ── State ────────────────────────────────────────────────────────────────────
 let allRows = [];
-let ageRange = [16, 80];
+let ageRange  = [16, 80];
+let fragRange = [0, 30];
 let genderFilter = 'all';
 let priceRows = {A:[], B:[], C:[], D:[]}; // global für Modal: [{price, age, gender}]
 let phaseFilter = 'dev';
@@ -437,6 +453,25 @@ function getAgeInt(r) {
   return isNaN(v) ? null : v;
 }
 
+function getFragInt(r) {
+  const v = parseInt(r.fragrance_count || '');
+  return isNaN(v) ? null : v;
+}
+
+function bucketFrag(rows) {
+  const buckets = {'0':0,'1–3':0,'4–7':0,'8–15':0,'16+':0};
+  rows.forEach(r => {
+    const f = getFragInt(r);
+    if (f === null) return;
+    if (f === 0)      buckets['0']++;
+    else if (f <= 3)  buckets['1–3']++;
+    else if (f <= 7)  buckets['4–7']++;
+    else if (f <= 15) buckets['8–15']++;
+    else              buckets['16+']++;
+  });
+  return buckets;
+}
+
 function bucketAge(rows) {
   const buckets = {'16–20':0,'21–25':0,'26–32':0,'33–45':0,'46+':0};
   rows.forEach(r => {
@@ -455,10 +490,12 @@ function bucketAge(rows) {
 function getFiltered() {
   return allRows.filter(r => {
     const a = getAgeInt(r);
-    const ageOk = a === null || (a >= ageRange[0] && a <= ageRange[1]);
-    const gOk   = genderFilter === 'all' || r.gender === genderFilter;
-    const pOk   = (r.phase || 'dev') === phaseFilter;
-    return ageOk && gOk && pOk;
+    const f = getFragInt(r);
+    const ageOk  = a === null || (a >= ageRange[0] && a <= ageRange[1]);
+    const fragOk = f === null || (f >= fragRange[0] && f <= fragRange[1]);
+    const gOk    = genderFilter === 'all' || r.gender === genderFilter;
+    const pOk    = (r.phase || 'dev') === phaseFilter;
+    return ageOk && fragOk && gOk && pOk;
   });
 }
 
@@ -491,6 +528,25 @@ function updateSliderFill() {
   const right = ((Math.max(mn,mx) - min) / range) * 100;
   document.getElementById('sliderFill').style.left  = left  + '%';
   document.getElementById('sliderFill').style.width = (right - left) + '%';
+
+  const fmn = parseInt(document.getElementById('fragMin').value);
+  const fmx = parseInt(document.getElementById('fragMax').value);
+  const fRange = 30;
+  const fLeft  = (Math.min(fmn,fmx) / fRange) * 100;
+  const fRight = (Math.max(fmn,fmx) / fRange) * 100;
+  document.getElementById('fragSliderFill').style.left  = fLeft  + '%';
+  document.getElementById('fragSliderFill').style.width = (fRight - fLeft) + '%';
+}
+
+function onFragSlider() {
+  let mn = parseInt(document.getElementById('fragMin').value);
+  let mx = parseInt(document.getElementById('fragMax').value);
+  if (mn > mx) { const tmp = mn; mn = mx; mx = tmp; }
+  fragRange = [mn, mx];
+  document.getElementById('fragMinVal').textContent = mn;
+  document.getElementById('fragMaxVal').textContent = mx === 30 ? '30+' : mx;
+  updateSliderFill();
+  render();
 }
 
 function setGender(btn) {
@@ -580,6 +636,12 @@ function renderOverview(rows) {
   const ageBuckets = bucketAge(rows);
   const aTotal = Object.values(ageBuckets).reduce((a,b)=>a+b,0);
 
+  // ─ Fragrance count ─
+  const fragBuckets = bucketFrag(rows);
+  const fTotal = Object.values(fragBuckets).reduce((a,b)=>a+b,0);
+  const fragNums = rows.map(r => getFragInt(r)).filter(v => v !== null);
+  const avgFrag = fragNums.length ? (fragNums.reduce((a,b)=>a+b,0) / fragNums.length).toFixed(1) : '–';
+
   // ─ E-Mail ─
   const emailCount = rows.filter(r => r.email && r.email.trim()).length;
 
@@ -609,6 +671,7 @@ function renderOverview(rows) {
     <div class="kpi kpi-green"><div class="kpi-label">Abgeschlossen</div><div class="kpi-value">${completed.length}</div><div class="kpi-sub">${complRate}% Completion-Rate</div></div>
     <div class="kpi kpi-blue"><div class="kpi-label">E-Mails</div><div class="kpi-value">${emailCount}</div><div class="kpi-sub">Launch-Liste</div></div>
     <div class="kpi kpi-accent"><div class="kpi-label">Favorit</div><div class="kpi-value">Duft ${favorit}</div><div class="kpi-sub">${rank1[favorit]}× auf Platz 1</div></div>
+    <div class="kpi"><div class="kpi-label">Ø Düfte besessen</div><div class="kpi-value">${avgFrag}</div><div class="kpi-sub">aus ${fragNums.length} Angaben</div></div>
     <div class="kpi"><div class="kpi-label">Naming Winner</div><div class="kpi-value sm">${namingLabels[namingWinner]||'–'}</div><div class="kpi-sub">${pct(naming[namingWinner]||0, namingTotal)} der Stimmen</div></div>
   </div>`;
 
@@ -622,6 +685,12 @@ function renderOverview(rows) {
   html += `<div class="panel"><div class="panel-label">Alter</div><div class="bar-chart">
     ${Object.entries(ageBuckets).map(([k,v]) => bar(k, v, aTotal)).join('')}
   </div></div>`;
+  html += '</div>';
+  html += '<div class="grid-2" style="margin-top:0">';
+  html += `<div class="panel"><div class="panel-label">Düfte in Besitz</div><div class="bar-chart">
+    ${Object.entries(fragBuckets).map(([k,v]) => bar(k === '0' ? 'Keine' : k + ' Düfte', v, fTotal)).join('')}
+  </div></div>`;
+  html += '<div></div>'; // placeholder für zweite Spalte
   html += '</div><div class="divider"></div>';
 
   // Favoriten-Ranking
