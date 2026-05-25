@@ -908,7 +908,7 @@ function openPriceModal(letter) {
   // Median für Ausreißer-Erkennung
   const mid    = Math.floor(total / 2);
   const median = total % 2 !== 0 ? sorted[mid].price : (sorted[mid-1].price + sorted[mid].price) / 2;
-  const outlierThreshold = median * 2.5;
+  const outlierThreshold = median * 2;
 
   const gLabel = g => g === 'm' ? 'Männlich' : g === 'w' ? 'Weiblich' : g === 'd' ? 'Divers' : '–';
 
