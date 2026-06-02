@@ -220,6 +220,7 @@
   .q-required-error { animation: shake 0.35s ease; }
 
   /* Scent-intro notice box */
+  /* Scent-intro notice box */
   .scent-intro-notice {
     background: var(--surface); border: 1px solid var(--border);
     border-left: 3px solid var(--text); border-radius: 4px;
@@ -227,8 +228,13 @@
     color: var(--text-muted);
   }
   .scent-intro-notice-title {
+    display: flex; align-items: center; gap: 8px;
     font-size: 11px; font-weight: 600; letter-spacing: 0.15em;
     text-transform: uppercase; color: var(--text); margin-bottom: 8px;
+  }
+  .scent-intro-notice-title svg {
+    width: 15px; height: 15px; fill: none; stroke: var(--text);
+    stroke-width: 1.8; flex-shrink: 0;
   }
 
   /* Fragrance conditional swap */
@@ -467,8 +473,11 @@
         Du wirst gleich vier verschiedene Düfte bewerten. Einen nach dem anderen.
       </p>
       <div class="scent-intro-notice">
-        <div class="scent-intro-notice-title">Wichtig zu wissen</div>
-        Jeder Duft hat eine eigene Nummer. Die Reihenfolge ist für jeden Teilnehmer zufällig — schau vor jeder Bewertung kurz, welcher Duft gerade dran ist.
+        <div class="scent-intro-notice-title">
+          <svg viewBox="0 0 24 24"><path d="M12 2a7 7 0 0 1 5 11.9V16a1 1 0 0 1-1 1H8a1 1 0 0 1-1-1v-2.1A7 7 0 0 1 12 2z"/><path d="M9 17v1a3 3 0 0 0 6 0v-1"/></svg>
+          Gut zu wissen
+        </div>
+        Jeder Duft hat eine eigene Nummer. Die Reihenfolge ist für jeden zufällig. Schau kurz, welcher Duft gerade dran ist.
       </div>
     </div>
   </div>
@@ -480,7 +489,7 @@
   <div class="section" id="section-6">
     <div class="section-label">06 — Ranking</div>
     <h2 class="section-heading">Dein Favoriten-Ranking.</h2>
-    <p class="section-desc">Platz 1 oben ist dein Favorit — verschiebe die Düfte in deine Reihenfolge.</p>
+    <p class="section-desc">Platz 1 oben ist dein Favorit. Verschiebe die Düfte in deine Reihenfolge.</p>
     <div id="ranking-container"></div>
   </div>
 
@@ -488,7 +497,7 @@
   <div class="section" id="section-7">
     <div class="section-label">07 — Naming</div>
     <h2 class="section-heading">Welcher Name spricht dich an?</h2>
-    <p class="section-desc">Kein Duft dahinter — nur der Name.</p>
+    <p class="section-desc">Kein Duft dahinter. Nur der Name.</p>
     <div class="naming-card">
       <div class="naming-card-label">Welcher klingt am besten?</div>
       <div class="naming-options" data-name="naming_winner">
@@ -1099,7 +1108,7 @@ function updateUI() {
   document.getElementById('navCounter').textContent = current + ' / ' + TOTAL;
   document.getElementById('btnBack').style.display = current > 1 ? 'inline-flex' : 'none';
   const btn = document.getElementById('btnNext');
-  if (current === TOTAL) { btn.textContent = 'Fertig — dein Bonus wartet'; btn.className = 'btn btn-submit'; }
+  if (current === TOTAL) { btn.textContent = 'Fertig. Dein Bonus wartet'; btn.className = 'btn btn-submit'; }
   else { btn.textContent = 'Weiter'; btn.className = 'btn btn-next'; }
 }
 
