@@ -416,9 +416,20 @@
     </div>
 
     <div class="question">
-      <span class="question-label">Wie viele Düfte hast du gerade zu Hause?</span>
-      <input type="number" inputmode="numeric" class="text-input" id="fragrance_count"
-             placeholder="z.B. 5" min="0" style="max-width:180px;">
+      <span class="question-label">Benutzt du regelmäßig Düfte?</span>
+      <div class="options" data-name="uses_fragrance">
+        <label class="option-item" data-frag="ja"><input type="radio" name="uses_fragrance" value="ja"> Ja</label>
+        <label class="option-item" data-frag="nein"><input type="radio" name="uses_fragrance" value="nein"> Nein</label>
+      </div>
+    </div>
+
+    <div class="question" id="fragrance-type-question" style="display:none;">
+      <span class="question-label">Welche Art von Düften?</span>
+      <div class="options" data-name="fragrance_type_choice">
+        <label class="option-item"><input type="radio" name="fragrance_type_choice" value="Designer"> Designer</label>
+        <label class="option-item"><input type="radio" name="fragrance_type_choice" value="Designer + Nische"> Designer + Nische</label>
+        <label class="option-item"><input type="radio" name="fragrance_type_choice" value="Ultranische"> Ultranische</label>
+      </div>
     </div>
   </div>
 
@@ -813,6 +824,11 @@ function initListeners() {
         document.getElementById('sport-follow-up').style.display =
           this.dataset.sport === 'ja' ? 'block' : 'none';
       }
+      // Fragrance type conditional
+      if (this.dataset.frag) {
+        document.getElementById('fragrance-type-question').style.display =
+          this.dataset.frag === 'ja' ? 'block' : 'none';
+      }
     });
   });
 
@@ -897,6 +913,16 @@ function collectBlock(n) {
       block[id] = el.value;
     }
   });
+
+  // Block 1: combine fragrance usage + type into fragrance_count
+  if (n === 1) {
+    const uses = block.uses_fragrance;
+    const type  = block.fragrance_type_choice;
+    if (uses === 'nein') block.fragrance_count = 'Nein';
+    else if (uses === 'ja') block.fragrance_count = type ? 'Ja — ' + type : 'Ja';
+    delete block.uses_fragrance;
+    delete block.fragrance_type_choice;
+  }
 
   // Ranking: DOM order = rank
   if (n === 6) {
