@@ -694,7 +694,7 @@ function renderOverview(rows) {
   const complRate = n ? Math.round((completed.length / n) * 100) : 0;
   html += `<div class="kpi-row">
     <div class="kpi"><div class="kpi-label">Teilnehmer</div><div class="kpi-value">${n}</div><div class="kpi-sub">Gestartet</div></div>
-    <div class="kpi"><div class="kpi-label">Altersdurchschnitt</div><div class="kpi-value">${avgAge}</div><div class="kpi-sub">aus ${ageNums.length} Angaben</div></div>
+    <div class="kpi"><div class="kpi-label">Ø Alter</div><div class="kpi-value">${avgAge}</div><div class="kpi-sub">aus ${ageNums.length} Angaben</div></div>
     <div class="kpi"><div class="kpi-label">Top Duft-Profil</div><div class="kpi-value sm">${topProfile[0]}</div><div class="kpi-sub">${topProfilePct}% · ${profileTotal} Angaben</div></div>
     <div class="kpi kpi-accent"><div class="kpi-label">Favorit</div><div class="kpi-value">Duft ${favorit}</div><div class="kpi-sub">${rank1[favorit]}× auf Platz 1</div></div>
     <div class="kpi kpi-blue"><div class="kpi-label">E-Mails</div><div class="kpi-value">${emailCount}</div><div class="kpi-sub">Launch-Liste</div></div>
