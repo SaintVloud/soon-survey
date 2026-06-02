@@ -43,7 +43,7 @@ CREATE TABLE IF NOT EXISTS survey_responses (
   scent_order TEXT[],          -- Randomisierte Reihenfolge, z.B. ['C','A','D','B']
   final_feedback TEXT,         -- Legacy
   completed BOOLEAN DEFAULT FALSE,
-  phase TEXT DEFAULT 'dev',    -- 'dev' | 'pilot' | 'broad'
+  phase TEXT DEFAULT 'dev',    -- 'dev' | 'pilot' (F+F) | 'broad'
   email TEXT,                  -- Optional: Launch-Bonus
   return_visit BOOLEAN DEFAULT FALSE  -- TRUE = zweiter Durchlauf nach Tragezeit
 );

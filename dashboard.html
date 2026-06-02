@@ -405,7 +405,7 @@
     <span class="filter-label">Phase</span>
     <select class="profile-select" onchange="setPhaseDrop(this.value)">
       <option value="dev">Dev</option>
-      <option value="pilot">Pilot</option>
+      <option value="pilot">F+F</option>
       <option value="broad">Broad</option>
     </select>
   </div>
@@ -435,6 +435,9 @@ const sb = createClient(
 );
 
 // ── State ────────────────────────────────────────────────────────────────────
+// ── Phase labels — change display names here only ────────────────────────────
+const PHASE_LABELS = { dev: 'DEV', pilot: 'F+F', broad: 'BROAD' };
+
 let allRows = [];
 let ageRange  = [16, 80];
 let fragProfileFilter = 'all';
@@ -524,7 +527,7 @@ function setPhaseDrop(val) {
   phaseFilter = val;
   const pill = document.getElementById('phasePill');
   pill.className = 'phase-pill ' + val;
-  pill.textContent = val.toUpperCase();
+  pill.textContent = PHASE_LABELS[val] || val.toUpperCase();
   render();
 }
 
