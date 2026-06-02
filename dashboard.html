@@ -377,6 +377,7 @@
       <option value="Nein">Kein Duft</option>
       <option value="Ja — Designer">Designer</option>
       <option value="Ja — Designer + Nische">Designer + Nische</option>
+      <option value="Ja — Nische">Nische</option>
       <option value="Ja — Ultranische">Ultranische</option>
     </select>
   </div>
@@ -631,12 +632,13 @@ function renderOverview(rows) {
   const aTotal = Object.values(ageBuckets).reduce((a,b)=>a+b,0);
 
   // ─ Duft-Profil ─
-  const profileBuckets = {'Kein Duft': 0, 'Designer': 0, 'Designer + Nische': 0, 'Ultranische': 0};
+  const profileBuckets = {'Kein Duft': 0, 'Designer': 0, 'Designer + Nische': 0, 'Nische': 0, 'Ultranische': 0};
   rows.forEach(r => {
     const v = r.fragrance_count || '';
     if (v === 'Nein') profileBuckets['Kein Duft']++;
     else if (v === 'Ja — Designer') profileBuckets['Designer']++;
     else if (v === 'Ja — Designer + Nische') profileBuckets['Designer + Nische']++;
+    else if (v === 'Ja — Nische') profileBuckets['Nische']++;
     else if (v === 'Ja — Ultranische') profileBuckets['Ultranische']++;
   });
   const profileTotal = Object.values(profileBuckets).reduce((a,b)=>a+b,0);
