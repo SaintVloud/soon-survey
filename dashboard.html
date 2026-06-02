@@ -384,30 +384,30 @@
 
   <div class="filter-group">
     <span class="filter-label">Besuch</span>
-    <div class="gender-btns">
-      <button class="gender-btn visit-btn active" onclick="setVisit(this,'all')">Alle</button>
-      <button class="gender-btn visit-btn"        onclick="setVisit(this,'first')">Erstbesuch</button>
-      <button class="gender-btn visit-btn"        onclick="setVisit(this,'return')">Wiederkehrend</button>
-    </div>
+    <select class="profile-select" onchange="setVisitDrop(this.value)">
+      <option value="all">Alle</option>
+      <option value="first">Erstbesuch</option>
+      <option value="return">Wiederkehrend</option>
+    </select>
   </div>
 
   <div class="filter-group">
     <span class="filter-label">Geschlecht</span>
-    <div class="gender-btns">
-      <button class="gender-btn active" data-g="all"  onclick="setGender(this)">Alle</button>
-      <button class="gender-btn"        data-g="m"    onclick="setGender(this)">Männlich</button>
-      <button class="gender-btn"        data-g="w"    onclick="setGender(this)">Weiblich</button>
-      <button class="gender-btn"        data-g="d"    onclick="setGender(this)">Divers</button>
-    </div>
+    <select class="profile-select" onchange="setGenderDrop(this.value)">
+      <option value="all">Alle</option>
+      <option value="m">Männlich</option>
+      <option value="w">Weiblich</option>
+      <option value="d">Divers</option>
+    </select>
   </div>
 
   <div class="filter-group">
     <span class="filter-label">Phase</span>
-    <div class="gender-btns">
-      <button class="gender-btn active" data-phase="dev"   onclick="setPhase(this)">Dev</button>
-      <button class="gender-btn"        data-phase="pilot" onclick="setPhase(this)">Pilot</button>
-      <button class="gender-btn"        data-phase="broad" onclick="setPhase(this)">Broad</button>
-    </div>
+    <select class="profile-select" onchange="setPhaseDrop(this.value)">
+      <option value="dev">Dev</option>
+      <option value="pilot">Pilot</option>
+      <option value="broad">Broad</option>
+    </select>
   </div>
 
   <span class="filter-result" id="filterResult">— Teilnehmer</span>
@@ -520,13 +520,11 @@ function getFiltered() {
   });
 }
 
-function setPhase(btn) {
-  document.querySelectorAll('[data-phase]').forEach(b => b.classList.remove('active'));
-  btn.classList.add('active');
-  phaseFilter = btn.dataset.phase;
+function setPhaseDrop(val) {
+  phaseFilter = val;
   const pill = document.getElementById('phasePill');
-  pill.className = 'phase-pill ' + phaseFilter;
-  pill.textContent = btn.textContent.toUpperCase();
+  pill.className = 'phase-pill ' + val;
+  pill.textContent = val.toUpperCase();
   render();
 }
 
@@ -557,17 +555,13 @@ function setFragProfile(val) {
   render();
 }
 
-function setVisit(btn, val) {
-  document.querySelectorAll('.visit-btn').forEach(b => b.classList.remove('active'));
-  btn.classList.add('active');
+function setVisitDrop(val) {
   visitFilter = val;
   render();
 }
 
-function setGender(btn) {
-  document.querySelectorAll('.gender-btn:not(.visit-btn)').forEach(b => b.classList.remove('active'));
-  btn.classList.add('active');
-  genderFilter = btn.dataset.g;
+function setGenderDrop(val) {
+  genderFilter = val;
   render();
 }
 
