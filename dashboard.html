@@ -633,10 +633,14 @@ function renderOverview(rows) {
   ['a','b','c','d'].forEach(l => { avgP[l] = avg(prices[l]); });
 
   // ─ Naming ─
-  const naming = {mood:0,mood_ingredient:0,ingredient:0};
-  rows.forEach(r => { if (r.naming_winner) naming[r.naming_winner] = (naming[r.naming_winner]||0)+1; });
+  const naming = {deep_focus:0, mood_ingredient:0, ingredient:0};
+  rows.forEach(r => {
+    if (!r.naming_winner) return;
+    const k = r.naming_winner === 'mood' ? 'deep_focus' : r.naming_winner;
+    naming[k] = (naming[k]||0) + 1;
+  });
   const namingTotal = Object.values(naming).reduce((a,b)=>a+b,0);
-  const namingLabels = {mood:'Bold Ease', mood_ingredient:'Bold Cedar', ingredient:'Clean Mango Dusk'};
+  const namingLabels = {deep_focus:'Deep Focus', mood_ingredient:'Bold Amber', ingredient:'Clean Mango Musk'};
   const namingWinner = Object.keys(naming).reduce((a,b) => naming[a] >= naming[b] ? a : b);
 
   // ─ Gender ─
