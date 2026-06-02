@@ -642,8 +642,10 @@ function renderOverview(rows) {
     else if (v === 'Ja — Ultranische') profileBuckets['Ultranische']++;
   });
   const profileTotal = Object.values(profileBuckets).reduce((a,b)=>a+b,0);
-  const profileNutzer = rows.filter(r => (r.fragrance_count||'').startsWith('Ja')).length;
-  const profileNutzerPct = profileTotal ? Math.round((profileNutzer / profileTotal) * 100) : '–';
+  const topProfile = profileTotal
+    ? Object.entries(profileBuckets).reduce((a, b) => b[1] > a[1] ? b : a)
+    : ['–', 0];
+  const topProfilePct = profileTotal ? Math.round((topProfile[1] / profileTotal) * 100) : '–';
 
   // ─ Average age ─
   const ageNums = rows.map(r => getAgeInt(r)).filter(v => v !== null);
@@ -676,7 +678,7 @@ function renderOverview(rows) {
   html += `<div class="kpi-row">
     <div class="kpi"><div class="kpi-label">Teilnehmer</div><div class="kpi-value">${n}</div><div class="kpi-sub">Gestartet</div></div>
     <div class="kpi"><div class="kpi-label">Altersdurchschnitt</div><div class="kpi-value">${avgAge}</div><div class="kpi-sub">aus ${ageNums.length} Angaben</div></div>
-    <div class="kpi"><div class="kpi-label">Duft-Nutzer</div><div class="kpi-value">${profileNutzerPct}%</div><div class="kpi-sub">aus ${profileTotal} Angaben</div></div>
+    <div class="kpi"><div class="kpi-label">Top Duft-Profil</div><div class="kpi-value sm">${topProfile[0]}</div><div class="kpi-sub">${topProfilePct}% · ${profileTotal} Angaben</div></div>
     <div class="kpi kpi-accent"><div class="kpi-label">Favorit</div><div class="kpi-value">Duft ${favorit}</div><div class="kpi-sub">${rank1[favorit]}× auf Platz 1</div></div>
     <div class="kpi kpi-blue"><div class="kpi-label">E-Mails</div><div class="kpi-value">${emailCount}</div><div class="kpi-sub">Launch-Liste</div></div>
     <div class="kpi kpi-green"><div class="kpi-label">Abgeschlossen</div><div class="kpi-value">${completed.length}</div><div class="kpi-sub">${complRate}% Completion-Rate</div></div>
