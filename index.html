@@ -540,6 +540,17 @@
         </div>
       </div>
     </div>
+
+    <div id="sport-nein-follow-up" style="display:none;">
+      <div class="question">
+        <span class="question-label">Würdest du beim Sport einen Duft tragen?</span>
+        <div class="options" data-name="sport_wear">
+          <label class="option-item"><input type="radio" name="sport_wear" value="ja"> Ja</label>
+          <label class="option-item"><input type="radio" name="sport_wear" value="vielleicht"> Vielleicht</label>
+          <label class="option-item"><input type="radio" name="sport_wear" value="nein"> Nein</label>
+        </div>
+      </div>
+    </div>
   </div>
 
   <!-- THANK YOU -->
@@ -855,6 +866,8 @@ function initListeners() {
       if (this.dataset.sport) {
         document.getElementById('sport-follow-up').style.display =
           this.dataset.sport === 'ja' ? 'block' : 'none';
+        document.getElementById('sport-nein-follow-up').style.display =
+          this.dataset.sport === 'nein' ? 'block' : 'none';
       }
       // Fragrance type conditional — swap Ja/Nein for type picker
       if (this.dataset.frag === 'ja') {
