@@ -219,6 +219,15 @@
   @keyframes shake { 0%,100%{transform:translateX(0)} 20%,60%{transform:translateX(-5px)} 40%,80%{transform:translateX(5px)} }
   .q-required-error { animation: shake 0.35s ease; }
 
+  /* Fragrance conditional swap */
+  #frag-yesno, #frag-type { transition: opacity 0.2s ease; }
+  .frag-back-btn {
+    margin-top: 12px; background: none; border: none;
+    font-size: 12px; color: var(--text-muted); cursor: pointer;
+    font-family: var(--font); padding: 0; text-decoration: underline;
+  }
+  .frag-back-btn:hover { color: var(--text); }
+
   /* Validation toast */
   .val-toast {
     position: fixed; bottom: calc(var(--nav-h) + var(--safe-bottom) + 10px); left: 50%;
@@ -415,20 +424,23 @@
              placeholder="z.B. 24" min="10" max="120" style="max-width:180px;">
     </div>
 
-    <div class="question">
-      <span class="question-label">Benutzt du regelmäßig Düfte?</span>
-      <div class="options" data-name="uses_fragrance">
-        <label class="option-item" data-frag="ja"><input type="radio" name="uses_fragrance" value="ja"> Ja</label>
-        <label class="option-item" data-frag="nein"><input type="radio" name="uses_fragrance" value="nein"> Nein</label>
-      </div>
-    </div>
+    <div class="question" id="fragrance-question">
+      <span class="question-label" id="fragrance-question-label">Benutzt du regelmäßig Düfte?</span>
 
-    <div class="question" id="fragrance-type-question" style="display:none;">
-      <span class="question-label">Welche Art von Düften?</span>
-      <div class="options" data-name="fragrance_type_choice">
-        <label class="option-item"><input type="radio" name="fragrance_type_choice" value="Designer"> Designer</label>
-        <label class="option-item"><input type="radio" name="fragrance_type_choice" value="Designer + Nische"> Designer + Nische</label>
-        <label class="option-item"><input type="radio" name="fragrance_type_choice" value="Ultranische"> Ultranische</label>
+      <div id="frag-yesno">
+        <div class="options" data-name="uses_fragrance">
+          <label class="option-item" data-frag="ja"><input type="radio" name="uses_fragrance" value="ja"> Ja</label>
+          <label class="option-item" data-frag="nein"><input type="radio" name="uses_fragrance" value="nein"> Nein</label>
+        </div>
+      </div>
+
+      <div id="frag-type" style="display:none;">
+        <div class="options" data-name="fragrance_type_choice">
+          <label class="option-item"><input type="radio" name="fragrance_type_choice" value="Designer"> Designer</label>
+          <label class="option-item"><input type="radio" name="fragrance_type_choice" value="Designer + Nische"> Designer + Nische</label>
+          <label class="option-item"><input type="radio" name="fragrance_type_choice" value="Ultranische"> Ultranische</label>
+        </div>
+        <button type="button" class="frag-back-btn" id="frag-back-btn">← Antwort ändern</button>
       </div>
     </div>
   </div>
@@ -824,10 +836,19 @@ function initListeners() {
         document.getElementById('sport-follow-up').style.display =
           this.dataset.sport === 'ja' ? 'block' : 'none';
       }
-      // Fragrance type conditional
-      if (this.dataset.frag) {
-        document.getElementById('fragrance-type-question').style.display =
-          this.dataset.frag === 'ja' ? 'block' : 'none';
+      // Fragrance type conditional — swap Ja/Nein for type picker
+      if (this.dataset.frag === 'ja') {
+        const yesno = document.getElementById('frag-yesno');
+        const type  = document.getElementById('frag-type');
+        const label = document.getElementById('fragrance-question-label');
+        yesno.style.opacity = '0';
+        setTimeout(() => {
+          yesno.style.display = 'none';
+          type.style.display  = 'block';
+          type.style.opacity  = '0';
+          label.textContent   = 'Welche Art von Düften?';
+          requestAnimationFrame(() => { type.style.opacity = '1'; });
+        }, 180);
       }
     });
   });
@@ -1144,6 +1165,27 @@ buildScentSections();
 buildRanking();
 initListeners();
 updateUI();
+
+// Fragrance "← Antwort ändern" resets back to Ja/Nein
+document.getElementById('frag-back-btn').addEventListener('click', function () {
+  const yesno = document.getElementById('frag-yesno');
+  const type  = document.getElementById('frag-type');
+  const label = document.getElementById('fragrance-question-label');
+  type.style.opacity = '0';
+  setTimeout(() => {
+    type.style.display  = 'none';
+    yesno.style.display = 'block';
+    yesno.style.opacity = '0';
+    label.textContent   = 'Benutzt du regelmäßig Düfte?';
+    // Clear type selection
+    type.querySelectorAll('.option-item').forEach(i => i.classList.remove('selected'));
+    type.querySelectorAll('input').forEach(i => i.checked = false);
+    // Clear yesno selection
+    yesno.querySelectorAll('.option-item').forEach(i => i.classList.remove('selected'));
+    yesno.querySelectorAll('input').forEach(i => i.checked = false);
+    requestAnimationFrame(() => { yesno.style.opacity = '1'; });
+  }, 180);
+});
 </script>
 </body>
 </html>
