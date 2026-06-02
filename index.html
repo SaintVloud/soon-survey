@@ -419,6 +419,13 @@
           Anonym &amp; vertraulich
         </div>
       </div>
+      <div class="scent-intro-notice" style="margin-top:28px; text-align:left;">
+        <div class="scent-intro-notice-title">
+          <svg viewBox="0 0 24 24"><path d="M12 2a7 7 0 0 1 5 11.9V16a1 1 0 0 1-1 1H8a1 1 0 0 1-1-1v-2.1A7 7 0 0 1 12 2z"/><path d="M9 17v1a3 3 0 0 0 6 0v-1"/></svg>
+          Tipp für bessere Ergebnisse
+        </div>
+        Mach die Umfrage am besten zweimal: direkt nach dem Aufsprühen und nochmal nach 1–2 Stunden oder nach einem ganzen Trageday. So sehen wir, wie sich die Düfte auf deiner Haut wirklich entwickeln.
+      </div>
     </div>
   </div>
 
@@ -440,6 +447,14 @@
       <span class="question-label">Alter</span>
       <input type="number" inputmode="numeric" class="text-input" id="age"
              placeholder="z.B. 24" min="10" max="120" style="max-width:180px;">
+    </div>
+
+    <div class="question">
+      <span class="question-label">Machst du die Umfrage zum ersten Mal?</span>
+      <div class="options" data-name="return_visit_q">
+        <label class="option-item"><input type="radio" name="return_visit_q" value="nein"> Ja, erstes Mal</label>
+        <label class="option-item"><input type="radio" name="return_visit_q" value="ja"> Nein, ich war schon dabei</label>
+      </div>
     </div>
 
     <div class="question" id="fragrance-question">
@@ -561,8 +576,8 @@
     <!-- Email capture -->
     <div class="email-capture" id="emailCapture">
       <div class="email-divider"></div>
-      <p class="email-teaser">20% auf deinen ersten Kauf.</p>
-      <p class="email-desc">Trag dich ein, wir schicken dir bei Launch deinen persönlichen Rabattcode.</p>
+      <p class="email-teaser" id="emailTeaser">Sicher dir deinen Launch-Bonus.</p>
+      <p class="email-desc" id="emailDesc">Trag dich ein und du bekommst bei Launch als Erstes Bescheid.</p>
       <div class="email-row">
         <input type="email" inputmode="email" autocomplete="email" class="text-input" id="emailInput" placeholder="deine@email.de">
         <button class="btn btn-next" onclick="saveEmail()">Code sichern</button>
@@ -603,6 +618,7 @@ const ADJ_LIST = ['Zitrisch','Frisch','Blumig','Fruchtig','Süß','Holzig','Herb
 
 let current = 0;
 let answers = {};
+let isReturn = false;
 
 // ── Session Persistenz (localStorage) ────────────────────────────────────────
 // Verhindert doppelte Rows wenn User Browser schließt und neu öffnet
@@ -967,7 +983,7 @@ function collectBlock(n) {
     }
   });
 
-  // Block 1: combine fragrance usage + type into fragrance_count
+  // Block 1: combine fragrance usage + type into fragrance_count; extract return_visit
   if (n === 1) {
     const uses = block.uses_fragrance;
     const type  = block.fragrance_type_choice;
@@ -975,6 +991,10 @@ function collectBlock(n) {
     else if (uses === 'ja') block.fragrance_count = type ? 'Ja — ' + type : 'Ja';
     delete block.uses_fragrance;
     delete block.fragrance_type_choice;
+
+    isReturn = block.return_visit_q === 'ja';
+    block.return_visit = isReturn;
+    delete block.return_visit_q;
   }
 
   // Ranking: DOM order = rank
@@ -1012,6 +1032,7 @@ function validateBlock(n) {
   if (n === 1) {
     checkRadio('gender');
     checkInput('age');
+    checkRadio('return_visit_q');
     // Fragrance: check whichever step is currently visible
     const fragTypeVisible = document.getElementById('frag-type').style.display !== 'none';
     if (fragTypeVisible) {
@@ -1150,9 +1171,21 @@ async function goNext() {
   const blockData = collectBlock(current);
   await saveBlock(current, blockData);
 
-  // After "Über dich" (block 1) → show scent intro first
+  // After "Über dich" (block 1) → update scent-intro text, then show it
   if (current === 1) {
+    if (isReturn) {
+      document.querySelector('#section-scent-intro .intro-heading').innerHTML = 'Du kennst<br>sie nun.';
+      document.querySelector('#section-scent-intro .intro-body').textContent =
+        'Du weißt, wie die Düfte riechen. Jetzt interessiert uns dein Eindruck nach dem Tragen. Hat sich etwas verändert? Welcher Eindruck ist geblieben?';
+      document.querySelector('#section-scent-intro .scent-intro-notice').style.display = 'none';
+    }
     current = 'scent-intro'; showSection('scent-intro'); updateUI(); return;
+  }
+
+  // Return visitor: skip sport (section 8), finish after naming (section 7)
+  if (isReturn && current === 7) {
+    if (dbRowId) await sb.from('survey_responses').update({ completed: true }).eq('id', dbRowId);
+    finish(); return;
   }
 
   if (current < TOTAL) { current++; showSection(current); updateUI(); }
@@ -1187,9 +1220,13 @@ async function saveEmail() {
 }
 
 function finish() {
-  // Session aus localStorage löschen → nächste Öffnung startet frisch
   localStorage.removeItem('soon_session_id');
   localStorage.removeItem('soon_row_id');
+
+  if (isReturn) {
+    document.getElementById('emailTeaser').textContent = 'Noch keinen Bonus gesichert?';
+    document.getElementById('emailDesc').textContent = 'Falls du beim ersten Mal keine E-Mail eingetragen hast, hol das jetzt noch nach.';
+  }
 
   document.getElementById('navWrap').style.display = 'none';
   document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));

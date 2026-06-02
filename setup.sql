@@ -44,7 +44,8 @@ CREATE TABLE IF NOT EXISTS survey_responses (
   final_feedback TEXT,         -- Legacy
   completed BOOLEAN DEFAULT FALSE,
   phase TEXT DEFAULT 'dev',    -- 'dev' | 'pilot' | 'broad'
-  email TEXT                   -- Optional: 20%-Rabattcode bei Launch
+  email TEXT,                  -- Optional: Launch-Bonus
+  return_visit BOOLEAN DEFAULT FALSE  -- TRUE = zweiter Durchlauf nach Tragezeit
 );
 
 -- ── Row Level Security ────────────────────────────────────────────────────────
@@ -78,7 +79,8 @@ CREATE POLICY "Anyone can read" ON survey_responses
 --   ADD COLUMN IF NOT EXISTS sport_wear TEXT,
 --   ADD COLUMN IF NOT EXISTS scent_order TEXT[],
 --   ADD COLUMN IF NOT EXISTS phase TEXT DEFAULT 'dev',
---   ADD COLUMN IF NOT EXISTS email TEXT;
+--   ADD COLUMN IF NOT EXISTS email TEXT,
+--   ADD COLUMN IF NOT EXISTS return_visit BOOLEAN DEFAULT FALSE;
 
 -- Schritt 2: Occasion & Season auf TEXT[] umstellen (Multi-Select)
 -- Bestehende Einzel-Werte werden sicher als 1-Element-Array übernommen.
