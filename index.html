@@ -980,17 +980,12 @@ function validateBlock(n) {
   if (n === 1) {
     checkRadio('gender');
     checkInput('age');
-    // Fragrance usage required — check whichever step is currently visible
-    const fragQuestion = document.getElementById('fragrance-question');
+    // Fragrance: check whichever step is currently visible
     const fragTypeVisible = document.getElementById('frag-type').style.display !== 'none';
     if (fragTypeVisible) {
-      // "Ja" was selected — type must also be chosen
-      const typeGroup = document.querySelector('#frag-type .options[data-name="fragrance_type_choice"]');
-      if (typeGroup && !typeGroup.querySelector('.option-item.selected')) missing.push(fragQuestion);
+      checkRadio('fragrance_type_choice');
     } else {
-      // Ja/Nein not yet answered
-      const yesnoGroup = document.querySelector('#frag-yesno .options[data-name="uses_fragrance"]');
-      if (yesnoGroup && !yesnoGroup.querySelector('.option-item.selected')) missing.push(fragQuestion);
+      checkRadio('uses_fragrance');
     }
   }
 
