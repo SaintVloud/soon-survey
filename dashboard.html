@@ -640,7 +640,7 @@ function renderOverview(rows) {
     naming[k] = (naming[k]||0) + 1;
   });
   const namingTotal = Object.values(naming).reduce((a,b)=>a+b,0);
-  const namingLabels = {deep_focus:'Deep Focus', mood_ingredient:'Bold Amber', ingredient:'Clean Mango Musk'};
+  const namingLabels = {deep_focus:'Deep Focus', mood_ingredient:'Bold Amber', ingredient:'Clean Amber Musk'};
   const namingWinner = Object.keys(naming).reduce((a,b) => naming[a] >= naming[b] ? a : b);
 
   // ─ Gender ─
