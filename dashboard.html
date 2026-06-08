@@ -679,10 +679,12 @@ function renderOverview(rows) {
   const sportMakes = {ja:0, nein:0};
   const sportWear  = {ja:0, manchmal:0, nein:0};
   const sportTypes = [];
+  const sportReasons = [];
   rows.forEach(r => {
     if (r.sport_makes) sportMakes[r.sport_makes] = (sportMakes[r.sport_makes]||0) + 1;
     if (r.sport_wear)  sportWear[r.sport_wear]   = (sportWear[r.sport_wear]||0)   + 1;
     if (r.sport_type && r.sport_type.trim()) sportTypes.push(r);
+    if (r.sport_wear_reason && r.sport_wear_reason.trim()) sportReasons.push(r);
   });
   const sportMakesN = Object.values(sportMakes).reduce((a,b)=>a+b,0);
   const sportWearN  = Object.values(sportWear).reduce((a,b)=>a+b,0);
@@ -781,10 +783,15 @@ function renderOverview(rows) {
     ${bar('Nein',     sportWear.nein||0,     sportWearN)}
   </div></div>`;
   html += '</div>';
+  const gLabel = g => g === 'm' ? 'Männlich' : g === 'w' ? 'Weiblich' : g === 'd' ? 'Divers' : '–';
   if (sportTypes.length) {
-    const gLabel = g => g === 'm' ? 'Männlich' : g === 'w' ? 'Weiblich' : g === 'd' ? 'Divers' : '–';
     html += `<div class="panel mb"><div class="panel-label">Welche Sportarten? (${sportTypes.length} Angaben)</div><div class="quotes-list">
       ${sportTypes.map(r => `<div class="quote">${esc(r.sport_type)}<div class="quote-meta">Alter ${r.age||'–'} · ${gLabel(r.gender)}</div></div>`).join('')}
+    </div></div>`;
+  }
+  if (sportReasons.length) {
+    html += `<div class="panel mb"><div class="panel-label">Warum kein Duft beim Sport? (${sportReasons.length} Angaben)</div><div class="quotes-list">
+      ${sportReasons.map(r => `<div class="quote">${esc(r.sport_wear_reason)}<div class="quote-meta">Alter ${r.age||'–'} · ${gLabel(r.gender)}</div></div>`).join('')}
     </div></div>`;
   }
   html += '<div class="divider"></div>';
