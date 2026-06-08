@@ -556,7 +556,7 @@
       </div>
       <div class="question" id="sport-wear-reason-1" style="display:none;">
         <span class="question-label">Warum nicht?</span>
-        <input type="text" class="text-input" id="sport_wear_reason_1" placeholder="z.B. stört beim Schwitzen, passt nicht dazu …">
+        <input type="text" class="text-input" id="sport_wear_reason_1" placeholder="">
       </div>
     </div>
 
@@ -570,7 +570,7 @@
       </div>
       <div class="question" id="sport-wear-reason-2" style="display:none;">
         <span class="question-label">Warum nicht?</span>
-        <input type="text" class="text-input" id="sport_wear_reason_2" placeholder="z.B. stört beim Schwitzen, passt nicht dazu …">
+        <input type="text" class="text-input" id="sport_wear_reason_2" placeholder="">
       </div>
     </div>
   </div>
@@ -895,8 +895,12 @@ function initListeners() {
       // Sport — "Warum nicht?" follow-up when 'Nein' is chosen
       if (this.dataset.wear) {
         const reasonId = this.closest('#sport-follow-up') ? 'sport-wear-reason-1' : 'sport-wear-reason-2';
-        document.getElementById(reasonId).style.display =
-          this.dataset.wear === 'nein' ? 'block' : 'none';
+        const reasonEl = document.getElementById(reasonId);
+        const isNein = this.dataset.wear === 'nein';
+        reasonEl.style.display = isNein ? 'block' : 'none';
+        if (isNein) {
+          setTimeout(() => reasonEl.scrollIntoView({ behavior: 'smooth', block: 'center' }), 50);
+        }
       }
       // Fragrance type conditional — swap Ja/Nein for type picker
       if (this.dataset.frag === 'ja') {
