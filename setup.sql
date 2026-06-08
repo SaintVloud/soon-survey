@@ -38,6 +38,7 @@ CREATE TABLE IF NOT EXISTS survey_responses (
   sport_makes TEXT,            -- Ja / Nein
   sport_type TEXT,             -- Welcher Sport (Freifeld)
   sport_wear TEXT,             -- Trägt Duft beim Sport: Ja / Manchmal / Nein
+  sport_wear_reason TEXT,      -- Freitext: Warum nicht? (wenn sport_wear = Nein)
 
   -- Meta
   scent_order TEXT[],          -- Randomisierte Reihenfolge, z.B. ['C','A','D','B']
@@ -77,6 +78,7 @@ CREATE POLICY "Anyone can read" ON survey_responses
 --   ADD COLUMN IF NOT EXISTS sport_makes TEXT,
 --   ADD COLUMN IF NOT EXISTS sport_type TEXT,
 --   ADD COLUMN IF NOT EXISTS sport_wear TEXT,
+--   ADD COLUMN IF NOT EXISTS sport_wear_reason TEXT,
 --   ADD COLUMN IF NOT EXISTS scent_order TEXT[],
 --   ADD COLUMN IF NOT EXISTS phase TEXT DEFAULT 'dev',
 --   ADD COLUMN IF NOT EXISTS email TEXT,

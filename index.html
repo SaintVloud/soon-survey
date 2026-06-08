@@ -549,10 +549,14 @@
       <div class="question">
         <span class="question-label">Trägst du dabei einen Duft?</span>
         <div class="options" data-name="sport_wear">
-          <label class="option-item"><input type="radio" name="sport_wear" value="ja"> Ja</label>
-          <label class="option-item"><input type="radio" name="sport_wear" value="manchmal"> Manchmal</label>
-          <label class="option-item"><input type="radio" name="sport_wear" value="nein"> Nein</label>
+          <label class="option-item" data-wear="ja"><input type="radio" name="sport_wear" value="ja"> Ja</label>
+          <label class="option-item" data-wear="manchmal"><input type="radio" name="sport_wear" value="manchmal"> Manchmal</label>
+          <label class="option-item" data-wear="nein"><input type="radio" name="sport_wear" value="nein"> Nein</label>
         </div>
+      </div>
+      <div class="question" id="sport-wear-reason-1" style="display:none;">
+        <span class="question-label">Warum nicht?</span>
+        <input type="text" class="text-input" id="sport_wear_reason_1" placeholder="z.B. stört beim Schwitzen, passt nicht dazu …">
       </div>
     </div>
 
@@ -560,9 +564,13 @@
       <div class="question">
         <span class="question-label">Würdest du beim Sport einen Duft tragen?</span>
         <div class="options" data-name="sport_wear">
-          <label class="option-item"><input type="radio" name="sport_wear" value="ja"> Ja</label>
-          <label class="option-item"><input type="radio" name="sport_wear" value="nein"> Nein</label>
+          <label class="option-item" data-wear="ja"><input type="radio" name="sport_wear" value="ja"> Ja</label>
+          <label class="option-item" data-wear="nein"><input type="radio" name="sport_wear" value="nein"> Nein</label>
         </div>
+      </div>
+      <div class="question" id="sport-wear-reason-2" style="display:none;">
+        <span class="question-label">Warum nicht?</span>
+        <input type="text" class="text-input" id="sport_wear_reason_2" placeholder="z.B. stört beim Schwitzen, passt nicht dazu …">
       </div>
     </div>
   </div>
@@ -884,6 +892,12 @@ function initListeners() {
         document.getElementById('sport-nein-follow-up').style.display =
           this.dataset.sport === 'nein' ? 'block' : 'none';
       }
+      // Sport — "Warum nicht?" follow-up when 'Nein' is chosen
+      if (this.dataset.wear) {
+        const reasonId = this.closest('#sport-follow-up') ? 'sport-wear-reason-1' : 'sport-wear-reason-2';
+        document.getElementById(reasonId).style.display =
+          this.dataset.wear === 'nein' ? 'block' : 'none';
+      }
       // Fragrance type conditional — swap Ja/Nein for type picker
       if (this.dataset.frag === 'ja') {
         const yesno = document.getElementById('frag-yesno');
@@ -995,6 +1009,14 @@ function collectBlock(n) {
     isReturn = block.return_visit_q === 'ja';
     block.return_visit = isReturn;
     delete block.return_visit_q;
+  }
+
+  // Block 8: merge the two "Warum nicht?" fields (only one is ever visible) into one
+  if (n === 8) {
+    const reason = block.sport_wear_reason_1 || block.sport_wear_reason_2;
+    if (reason) block.sport_wear_reason = reason;
+    delete block.sport_wear_reason_1;
+    delete block.sport_wear_reason_2;
   }
 
   // Ranking: DOM order = rank
