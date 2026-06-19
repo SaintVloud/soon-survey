@@ -348,7 +348,7 @@
   </div>
   <div class="header-right">
     <span class="last-updated" id="lastUpdated">Lädt …</span>
-    <span class="phase-pill dev" id="phasePill">DEV</span>
+    <span class="phase-pill pilot" id="phasePill">F+F</span>
     <button class="refresh-btn" onclick="loadData()">Aktualisieren</button>
   </div>
 </div>
@@ -405,7 +405,7 @@
     <span class="filter-label">Phase</span>
     <select class="profile-select" onchange="setPhaseDrop(this.value)">
       <option value="dev">Dev</option>
-      <option value="pilot">F+F</option>
+      <option value="pilot" selected>F+F</option>
       <option value="broad">Broad</option>
     </select>
   </div>
@@ -444,7 +444,7 @@ let fragProfileFilter = 'all';
 let visitFilter = 'all';
 let genderFilter = 'all';
 let priceRows = {A:[], B:[], C:[], D:[]}; // global für Modal: [{price, age, gender}]
-let phaseFilter = 'dev';
+let phaseFilter = 'pilot';
 let activeTab = 'overview';
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
