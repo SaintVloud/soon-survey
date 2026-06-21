@@ -444,6 +444,7 @@ let fragProfileFilter = 'all';
 let visitFilter = 'all';
 let genderFilter = 'all';
 let priceRows = {A:[], B:[], C:[], D:[]}; // global für Modal: [{price, age, gender}]
+let emailRows = []; // global für Modal: [{email, age, gender, completed, created_at}]
 let phaseFilter = 'pilot';
 let activeTab = 'overview';
 
@@ -673,7 +674,8 @@ function renderOverview(rows) {
   const avgAge = ageNums.length ? Math.round(ageNums.reduce((a,b)=>a+b,0) / ageNums.length) : '–';
 
   // ─ E-Mail ─
-  const emailCount = rows.filter(r => r.email && r.email.trim()).length;
+  emailRows = rows.filter(r => r.email && r.email.trim());
+  const emailCount = emailRows.length;
 
   // ─ Sport ─
   const sportMakes = {ja:0, nein:0};
@@ -703,7 +705,7 @@ function renderOverview(rows) {
     <div class="kpi"><div class="kpi-label">Ø Alter</div><div class="kpi-value">${avgAge}</div><div class="kpi-sub">aus ${ageNums.length} Angaben</div></div>
     <div class="kpi"><div class="kpi-label">Top Duft-Profil</div><div class="kpi-value sm">${topProfile[0]}</div><div class="kpi-sub">${topProfilePct}% · ${profileTotal} Angaben</div></div>
     <div class="kpi kpi-accent"><div class="kpi-label">Favorit</div><div class="kpi-value">Duft ${favorit}</div><div class="kpi-sub">${rank1[favorit]}× auf Platz 1</div></div>
-    <div class="kpi kpi-blue"><div class="kpi-label">E-Mails</div><div class="kpi-value">${emailCount}</div><div class="kpi-sub">Launch-Liste</div></div>
+    <div class="kpi kpi-blue" style="cursor:pointer" onclick="openEmailModal()"><div class="kpi-label">E-Mails</div><div class="kpi-value">${emailCount}</div><div class="kpi-sub">Launch-Liste ↗</div></div>
     <div class="kpi kpi-green"><div class="kpi-label">Abgeschlossen</div><div class="kpi-value">${completed.length}</div><div class="kpi-sub">${complRate}% Completion-Rate</div></div>
   </div>`;
 
@@ -1040,6 +1042,33 @@ function openPriceModal(letter) {
 function closePriceModal() {
   document.getElementById('priceModal').classList.remove('open');
 }
+
+// ── Email Modal ──────────────────────────────────────────────────────────────
+function openEmailModal() {
+  if (!emailRows.length) return;
+
+  document.getElementById('emailModalTitle').textContent = 'E-Mails — Launch-Liste';
+  document.getElementById('emailModalMeta').textContent  = `${emailRows.length} Eintrag${emailRows.length !== 1 ? 'e' : ''}`;
+
+  const gLabel = g => g === 'm' ? 'Männlich' : g === 'w' ? 'Weiblich' : g === 'd' ? 'Divers' : '–';
+  const body = document.getElementById('modalEmailList');
+  body.innerHTML = emailRows.map(r => {
+    const date = r.created_at ? new Date(r.created_at).toLocaleString('de-DE', { day:'2-digit', month:'2-digit', year:'2-digit', hour:'2-digit', minute:'2-digit' }) : '–';
+    return `<div class="price-row">
+      <div>
+        <div class="price-row-val">${esc(r.email)}</div>
+        <div class="price-row-meta">${date} · Alter ${r.age || '–'} · ${gLabel(r.gender)}</div>
+      </div>
+      ${r.completed ? '<span class="price-row-badge" style="background:#ECFDF5;color:#059669">Abgeschlossen</span>' : ''}
+    </div>`;
+  }).join('');
+
+  document.getElementById('emailModal').classList.add('open');
+}
+
+function closeEmailModal() {
+  document.getElementById('emailModal').classList.remove('open');
+}
 </script>
 
 <!-- Price Modal -->
@@ -1058,6 +1087,22 @@ function closePriceModal() {
         <div class="modal-avg-lbl">Durchschnitt</div>
       </div>
       <div id="modalPriceList"></div>
+    </div>
+  </div>
+</div>
+
+<!-- Email Modal -->
+<div class="modal-overlay" id="emailModal" onclick="if(event.target===this) closeEmailModal()">
+  <div class="modal">
+    <div class="modal-header">
+      <div>
+        <div class="modal-title" id="emailModalTitle"></div>
+        <div class="modal-meta" id="emailModalMeta"></div>
+      </div>
+      <button class="modal-close" onclick="closeEmailModal()">×</button>
+    </div>
+    <div class="modal-body">
+      <div id="modalEmailList"></div>
     </div>
   </div>
 </div>
