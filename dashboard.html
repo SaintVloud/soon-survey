@@ -118,6 +118,10 @@
   }
   .tab-btn:hover { color:var(--text); }
   .tab-btn.active { color:var(--text); border-bottom-color:var(--text); }
+  .tab-btn-internal {
+    display:block; font-size:9px; letter-spacing:0.03em; text-transform:none;
+    color:var(--text-muted); opacity:0.6; margin-top:2px;
+  }
 
   /* ── Body ── */
   .body { padding:32px; max-width:1280px; margin:0 auto; }
@@ -221,6 +225,10 @@
     width:64px; height:64px; border:1px solid rgba(255,255,255,0.2);
     display:flex; align-items:center; justify-content:center;
     font-family:var(--font); font-size:28px; flex-shrink:0; border-radius:2px;
+  }
+  .scent-hero-letter-wrap { display:flex; flex-direction:column; align-items:center; gap:6px; }
+  .scent-hero-letter-internal {
+    font-size:10px; letter-spacing:0.05em; color:var(--white); opacity:0.5;
   }
   .scent-hero-kpis { display:flex; gap:40px; flex:1; }
   .scent-hero-kpi .val { font-family:var(--font); font-size:28px; font-weight:300; letter-spacing:-0.02em; }
@@ -416,10 +424,10 @@
 <!-- Tab Navigation -->
 <div class="tab-nav">
   <button class="tab-btn active" onclick="switchTab('overview')">Übersicht</button>
-  <button class="tab-btn" onclick="switchTab('A')">Duft A</button>
-  <button class="tab-btn" onclick="switchTab('B')">Duft B</button>
-  <button class="tab-btn" onclick="switchTab('C')">Duft C</button>
-  <button class="tab-btn" onclick="switchTab('D')">Duft D</button>
+  <button class="tab-btn" onclick="switchTab('A')">Duft A<span class="tab-btn-internal">T24</span></button>
+  <button class="tab-btn" onclick="switchTab('B')">Duft B<span class="tab-btn-internal">Fleur</span></button>
+  <button class="tab-btn" onclick="switchTab('C')">Duft C<span class="tab-btn-internal">Musk</span></button>
+  <button class="tab-btn" onclick="switchTab('D')">Duft D<span class="tab-btn-internal">Blond</span></button>
 </div>
 
 <!-- Content -->
@@ -437,6 +445,7 @@ const sb = createClient(
 // ── State ────────────────────────────────────────────────────────────────────
 // ── Phase labels — change display names here only ────────────────────────────
 const PHASE_LABELS = { dev: 'DEV', pilot: 'F+F', broad: 'BROAD' };
+const SCENT_NAMES = { A: 'T24', B: 'Fleur', C: 'Musk', D: 'Blond' }; // intern, nicht für User sichtbar
 
 let allRows = [];
 let ageRange  = [16, 80];
@@ -883,7 +892,10 @@ function renderScent(rows, letter) {
 
   // Scent Hero
   html += `<div class="scent-hero">
-    <div class="scent-hero-letter">${letter}</div>
+    <div class="scent-hero-letter-wrap">
+      <div class="scent-hero-letter">${letter}</div>
+      <div class="scent-hero-letter-internal">${SCENT_NAMES[letter] || ''}</div>
+    </div>
     <div class="scent-hero-kpis">
       <div class="scent-hero-kpi" style="cursor:pointer" onclick="openPriceModal('${letter}')">
         <div class="val">${avgPrice ? '€ ' + Math.round(avgPrice) : '–'}</div>
