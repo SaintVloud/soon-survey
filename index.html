@@ -584,11 +584,11 @@
     <!-- Email capture -->
     <div class="email-capture" id="emailCapture">
       <div class="email-divider"></div>
-      <p class="email-teaser" id="emailTeaser">Sicher dir deinen Launch-Bonus.</p>
-      <p class="email-desc" id="emailDesc">Trag dich ein und du bekommst bei Launch als Erstes Bescheid.</p>
+      <p class="email-teaser" id="emailTeaser">Sichere dir deinen exklusiven Launch-Vorteil</p>
+      <p class="email-desc" id="emailDesc">Trag dich jetzt ein und erfahre als Erste:r, wann unsere Düfte erhältlich sind. Als Dankeschön erhältst du einen exklusiven Rabattcode für deinen ersten Einkauf.</p>
       <div class="email-row">
         <input type="email" inputmode="email" autocomplete="email" class="text-input" id="emailInput" placeholder="deine@email.de">
-        <button class="btn btn-next" onclick="saveEmail()">Code sichern</button>
+        <button class="btn btn-next" onclick="saveEmail()">Launch-Bonus sichern</button>
       </div>
     </div>
 
@@ -1251,11 +1251,6 @@ async function saveEmail() {
 function finish() {
   localStorage.removeItem('soon_session_id');
   localStorage.removeItem('soon_row_id');
-
-  if (isReturn) {
-    document.getElementById('emailTeaser').textContent = 'Noch keinen Bonus gesichert?';
-    document.getElementById('emailDesc').textContent = 'Falls du beim ersten Mal keine E-Mail eingetragen hast, hol das jetzt noch nach.';
-  }
 
   document.getElementById('navWrap').style.display = 'none';
   document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
