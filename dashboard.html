@@ -123,6 +123,16 @@
     color:var(--text-muted); opacity:0.6; margin-top:2px;
   }
 
+  /* ── Sport Filter Chips ── */
+  .sport-chips { display:flex; flex-wrap:wrap; gap:8px; margin:14px 0 18px; }
+  .sport-chip {
+    padding:4px 13px; border-radius:100px; border:1.5px solid var(--border);
+    font-size:12px; cursor:pointer; background:var(--white); color:var(--text-muted);
+    transition:background 0.15s, color 0.15s, border-color 0.15s;
+  }
+  .sport-chip:hover { border-color:var(--text); color:var(--text); }
+  .sport-chip.active { background:var(--text); color:var(--white); border-color:var(--text); }
+
   /* ── Body ── */
   .body { padding:32px; max-width:1280px; margin:0 auto; }
 
@@ -454,6 +464,7 @@ let visitFilter = 'all';
 let genderFilter = 'all';
 let priceRows = {A:[], B:[], C:[], D:[]}; // global für Modal: [{price, age, gender}]
 let emailRows = []; // global für Modal: [{email, age, gender, completed, created_at}]
+let sportRowsAll = []; // global für Sport-Filter
 let phaseFilter = 'pilot';
 let activeTab = 'overview';
 
@@ -699,6 +710,7 @@ function renderOverview(rows) {
   });
   const sportMakesN = Object.values(sportMakes).reduce((a,b)=>a+b,0);
   const sportWearN  = Object.values(sportWear).reduce((a,b)=>a+b,0);
+  sportRowsAll = sportTypes;
 
   // ─ Funnel ─
   const funnelLabels = ['01 — Über dich','02 — Duft (1)','03 — Duft (2)','04 — Duft (3)','05 — Duft (4)','06 — Ranking','07 — Naming','08 — Sport'];
@@ -783,22 +795,37 @@ function renderOverview(rows) {
   html += '<div class="divider"></div>';
 
   // Sport & Duft
+  const gLabel = g => g === 'm' ? 'Männlich' : g === 'w' ? 'Weiblich' : g === 'd' ? 'Divers' : '–';
+
+  // Unique sport chips aus freiem Text (komma-getrennt splitten, normalisieren)
+  const sportChipSet = new Set();
+  sportTypes.forEach(r => {
+    r.sport_type.split(/[,;/]+/).forEach(s => {
+      const t = s.trim();
+      if (t) sportChipSet.add(t.charAt(0).toUpperCase() + t.slice(1).toLowerCase());
+    });
+  });
+  const sportChips = [...sportChipSet].sort();
+  const chipsHtml = sportTypes.length ? `
+    <div class="sport-chips">
+      <div class="sport-chip active" data-sport="alle" onclick="filterSport('alle')">Alle</div>
+      ${sportChips.map(c => `<div class="sport-chip" data-sport="${esc(c)}" onclick="filterSport('${esc(c)}')">${esc(c)}</div>`).join('')}
+    </div>` : '';
+
   html += '<h2 class="section-heading">Sport & Duft</h2><div class="grid-2">';
   html += `<div class="panel"><div class="panel-label">Machst du Sport? (${sportMakesN} Antworten)</div><div class="bar-chart">
     ${bar('Ja',   sportMakes.ja||0,   sportMakesN)}
     ${bar('Nein', sportMakes.nein||0, sportMakesN)}
   </div></div>`;
-  html += `<div class="panel"><div class="panel-label">Trägst du Duft beim Sport? (${sportWearN} Antworten)</div><div class="bar-chart">
+  html += `<div class="panel"><div class="panel-label" id="sportWearLabel">Trägst du Duft beim Sport? (${sportWearN} Antworten)</div><div class="bar-chart" id="sportWearChart">
     ${bar('Ja',       sportWear.ja||0,       sportWearN)}
     ${bar('Manchmal', sportWear.manchmal||0, sportWearN)}
     ${bar('Nein',     sportWear.nein||0,     sportWearN)}
   </div></div>`;
   html += '</div>';
-  const gLabel = g => g === 'm' ? 'Männlich' : g === 'w' ? 'Weiblich' : g === 'd' ? 'Divers' : '–';
   if (sportTypes.length) {
-    html += `<div class="panel mb"><div class="panel-label">Welche Sportarten? (${sportTypes.length} Angaben)</div><div class="quotes-list">
-      ${sportTypes.map(r => `<div class="quote">${esc(r.sport_type)}<div class="quote-meta">Alter ${r.age||'–'} · ${gLabel(r.gender)}</div></div>`).join('')}
-    </div></div>`;
+    const quotesHtml = sportTypes.map(r => `<div class="quote">${esc(r.sport_type)}<div class="quote-meta">Alter ${r.age||'–'} · ${gLabel(r.gender)} · ${r.sport_wear ? {ja:'Trägt Duft',manchmal:'Manchmal',nein:'Kein Duft'}[r.sport_wear]||r.sport_wear : '–'}</div></div>`).join('');
+    html += `<div class="panel mb">${chipsHtml}<div class="panel-label" id="sportTypesLabel">Welche Sportarten? (${sportTypes.length} Angaben)</div><div class="quotes-list" id="sportTypesList">${quotesHtml}</div></div>`;
   }
   if (sportReasons.length) {
     html += `<div class="panel mb"><div class="panel-label">Warum kein Duft beim Sport? (${sportReasons.length} Angaben)</div><div class="quotes-list">
@@ -1014,6 +1041,39 @@ function checkLogin() {
 if (sessionStorage.getItem('dash_auth') === '1') {
   document.getElementById('loginScreen').style.display = 'none';
   loadData();
+}
+
+// ── Sport Filter ─────────────────────────────────────────────────────────────
+function filterSport(key) {
+  document.querySelectorAll('.sport-chip').forEach(c =>
+    c.classList.toggle('active', c.dataset.sport === key)
+  );
+
+  const gLabel = g => g === 'm' ? 'Männlich' : g === 'w' ? 'Weiblich' : g === 'd' ? 'Divers' : '–';
+  const wearLabel = {ja:'Trägt Duft', manchmal:'Manchmal', nein:'Kein Duft'};
+
+  const filtered = key === 'alle'
+    ? sportRowsAll
+    : sportRowsAll.filter(r => r.sport_type.toLowerCase().includes(key.toLowerCase()));
+
+  // Quotes aktualisieren
+  const label = document.getElementById('sportTypesLabel');
+  const list  = document.getElementById('sportTypesList');
+  const wearChart = document.getElementById('sportWearChart');
+  const wearHead  = document.getElementById('sportWearLabel');
+  if (!label || !list || !wearChart) return;
+
+  label.textContent = `Welche Sportarten? (${filtered.length} Angaben${key !== 'alle' ? ' · ' + key : ''})`;
+  list.innerHTML = filtered.length
+    ? filtered.map(r => `<div class="quote">${esc(r.sport_type)}<div class="quote-meta">Alter ${r.age||'–'} · ${gLabel(r.gender)} · ${r.sport_wear ? wearLabel[r.sport_wear]||r.sport_wear : '–'}</div></div>`).join('')
+    : '<div class="no-data">Keine Einträge für diesen Filter.</div>';
+
+  // Duft-beim-Sport Chart aktualisieren
+  const wear = {ja:0, manchmal:0, nein:0};
+  filtered.forEach(r => { if (r.sport_wear) wear[r.sport_wear] = (wear[r.sport_wear]||0)+1; });
+  const wearN = Object.values(wear).reduce((a,b)=>a+b,0);
+  wearHead.textContent = `Trägst du Duft beim Sport? (${wearN} Antworten${key !== 'alle' ? ' · ' + key : ''})`;
+  wearChart.innerHTML = bar('Ja', wear.ja||0, wearN) + bar('Manchmal', wear.manchmal||0, wearN) + bar('Nein', wear.nein||0, wearN);
 }
 
 // ── Price Modal ───────────────────────────────────────────────────────────────
