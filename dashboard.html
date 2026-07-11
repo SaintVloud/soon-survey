@@ -32,9 +32,10 @@
     padding:4px 10px; border-radius:2px; font-size:10px; font-weight:600;
     letter-spacing:0.15em; text-transform:uppercase;
   }
-  .phase-pill.dev   { background:#FF6B00; color:#fff; }
-  .phase-pill.pilot { background:var(--green); color:#fff; }
-  .phase-pill.broad { background:#2B6CB0; color:#fff; }
+  .phase-pill.dev          { background:#FF6B00; color:#fff; }
+  .phase-pill.pilot        { background:var(--green); color:#fff; }
+  .phase-pill.probenportal { background:#7C3AED; color:#fff; }
+  .phase-pill.broad        { background:#2B6CB0; color:#fff; }
   .refresh-btn {
     padding:9px 18px; background:var(--text); color:var(--white); border:none;
     border-radius:2px; font-size:11px; letter-spacing:0.15em; text-transform:uppercase;
@@ -366,7 +367,7 @@
   </div>
   <div class="header-right">
     <span class="last-updated" id="lastUpdated">Lädt …</span>
-    <span class="phase-pill pilot" id="phasePill">F+F</span>
+    <span class="phase-pill probenportal" id="phasePill">Probenportal</span>
     <button class="refresh-btn" onclick="loadData()">Aktualisieren</button>
   </div>
 </div>
@@ -423,7 +424,8 @@
     <span class="filter-label">Phase</span>
     <select class="profile-select" onchange="setPhaseDrop(this.value)">
       <option value="dev">Dev</option>
-      <option value="pilot" selected>F+F</option>
+      <option value="pilot">F+F</option>
+      <option value="probenportal" selected>Probenportal</option>
       <option value="broad">Broad</option>
     </select>
   </div>
@@ -454,7 +456,7 @@ const sb = createClient(
 
 // ── State ────────────────────────────────────────────────────────────────────
 // ── Phase labels — change display names here only ────────────────────────────
-const PHASE_LABELS = { dev: 'DEV', pilot: 'F+F', broad: 'BROAD' };
+const PHASE_LABELS = { dev: 'DEV', pilot: 'F+F', probenportal: 'Probenportal', broad: 'BROAD' };
 const SCENT_NAMES = { A: 'T24', B: 'Fleur', C: 'Musk', D: 'Blond' }; // intern, nicht für User sichtbar
 
 let allRows = [];
@@ -465,7 +467,7 @@ let genderFilter = 'all';
 let priceRows = {A:[], B:[], C:[], D:[]}; // global für Modal: [{price, age, gender}]
 let emailRows = []; // global für Modal: [{email, age, gender, completed, created_at}]
 let sportRowsAll = []; // global für Sport-Filter
-let phaseFilter = 'pilot';
+let phaseFilter = 'probenportal';
 let activeTab = 'overview';
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
